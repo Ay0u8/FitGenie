@@ -31,6 +31,3 @@ export async function callGroqChat({
   const content = completion.choices?.[0]?.message?.content ?? '';
   return content;
 }
-
-Encoding
-UTF8

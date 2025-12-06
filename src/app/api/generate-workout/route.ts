@@ -45,8 +45,10 @@ Please generate a short, structured weekly workout plan following the instructio
     return NextResponse.json({ plan: safeContent });
   } catch (error) {
     console.error("/api/generate-workout error", error);
+    const message =
+      error instanceof Error ? error.message : "Unknown server error";
     return NextResponse.json(
-      { error: "Failed to generate workout" },
+      { error: "Failed to generate workout", details: message },
       { status: 500 }
     );
   }

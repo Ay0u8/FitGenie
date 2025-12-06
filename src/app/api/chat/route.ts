@@ -38,8 +38,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ reply: safeContent });
   } catch (error) {
     console.error("/api/chat error", error);
+    const message =
+      error instanceof Error ? error.message : "Unknown server error";
     return NextResponse.json(
-      { error: "Failed to get chat reply" },
+      { error: "Failed to get chat reply", details: message },
       { status: 500 }
     );
   }

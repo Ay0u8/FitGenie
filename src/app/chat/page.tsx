@@ -83,7 +83,7 @@ export default function ChatPage() {
                   }`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-lg px-3 py-2 leading-relaxed shadow-sm ${
+                    className={`max-w-[80%] rounded-lg px-3 py-2 leading-relaxed shadow-sm whitespace-pre-wrap ${
                       m.role === "user"
                         ? "bg-sky-500 text-slate-950"
                         : "bg-slate-800/80 text-slate-50"
