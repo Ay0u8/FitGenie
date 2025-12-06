@@ -40,7 +40,12 @@ export default function ChatPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to get reply");
+        // Surface backend error details in the UI when possible
+        throw new Error(
+          (data && (data.details as string)) ||
+            (data && (data.error as string)) ||
+            "Failed to get reply"
+        );
       }
 
       const data = await res.json();
