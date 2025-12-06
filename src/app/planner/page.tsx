@@ -54,25 +54,35 @@ export default function PlannerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          FitGenie Workout Planner
-        </h1>
-        <p className="max-w-2xl text-sm text-slate-300">
-          Tell FitGenie about your goals, experience, schedule, equipment, and any
-          injuries. You&apos;ll get a short, beginner-friendly weekly workout plan.
-        </p>
-        <div className="grid gap-6 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1.2fr)]">
-          <Card className="bg-slate-900/60 border-slate-800">
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-50">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.1),transparent_30%),radial-gradient(circle_at_80%_0%,rgba(129,140,248,0.12),transparent_25%),radial-gradient(circle_at_50%_80%,rgba(16,185,129,0.08),transparent_28%)]" />
+      <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10">
+        <header className="space-y-3">
+          <p className="text-xs uppercase tracking-[0.28em] text-sky-300/80">Planner</p>
+          <div className="flex flex-col gap-2">
+            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+              FitGenie Workout Planner
+            </h1>
+            <p className="max-w-3xl text-sm text-slate-300">
+              Tell FitGenie about your goals, schedule, equipment, and any injuries. We&apos;ll build a clear, bullet-point plan you can follow today.
+            </p>
+          </div>
+        </header>
+
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+          <Card className="bg-slate-900/70 border-slate-800/80 shadow-xl shadow-sky-900/10">
             <CardHeader>
-              <CardTitle className="text-lg font-medium">
+              <CardTitle className="text-lg font-medium tracking-tight text-slate-100">
                 Your training profile
               </CardTitle>
             </CardHeader>
             <CardContent>
               <form
-                action={handleSubmit}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  handleSubmit(formData);
+                }}
                 className="flex flex-col gap-4 text-sm"
               >
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -82,7 +92,7 @@ export default function PlannerPage() {
                     </span>
                     <select
                       name="goal"
-                      className="h-9 rounded-md border border-slate-700 bg-slate-900 px-2 text-xs text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+                      className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-xs text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
                       defaultValue={goals[0]}
                     >
                       {goals.map((g) => (
@@ -98,7 +108,7 @@ export default function PlannerPage() {
                     </span>
                     <select
                       name="experienceLevel"
-                      className="h-9 rounded-md border border-slate-700 bg-slate-900 px-2 text-xs text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+                      className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-xs text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
                       defaultValue={levels[0]}
                     >
                       {levels.map((l) => (
@@ -121,7 +131,7 @@ export default function PlannerPage() {
                       min={1}
                       max={7}
                       defaultValue={3}
-                      className="h-9 border-slate-700 bg-slate-900 text-xs"
+                      className="h-10 border-slate-700 bg-slate-900 text-xs"
                     />
                   </label>
                   <label className="flex flex-col gap-1">
@@ -134,7 +144,7 @@ export default function PlannerPage() {
                       min={20}
                       max={120}
                       defaultValue={45}
-                      className="h-9 border-slate-700 bg-slate-900 text-xs"
+                      className="h-10 border-slate-700 bg-slate-900 text-xs"
                     />
                   </label>
                 </div>
@@ -146,7 +156,7 @@ export default function PlannerPage() {
                   <Input
                     name="equipment"
                     placeholder="e.g. dumbbells, barbell, resistance bands, machines, bodyweight only"
-                    className="h-9 border-slate-700 bg-slate-900 text-xs"
+                    className="h-10 border-slate-700 bg-slate-900 text-xs"
                   />
                   <span className="text-[10px] text-slate-400">
                     Separate items with commas.
@@ -160,7 +170,7 @@ export default function PlannerPage() {
                   <Textarea
                     name="injuries"
                     placeholder="e.g. lower back pain, knee issues, shoulder discomfort when pressing"
-                    className="min-h-[70px] border-slate-700 bg-slate-900 text-xs"
+                    className="min-h-[80px] border-slate-700 bg-slate-900 text-xs"
                   />
                 </label>
 
@@ -171,11 +181,11 @@ export default function PlannerPage() {
                   <Textarea
                     name="preferences"
                     placeholder="e.g. prefer push/pull/legs, like machines more than free weights, want short workouts"
-                    className="min-h-[70px] border-slate-700 bg-slate-900 text-xs"
+                    className="min-h-[80px] border-slate-700 bg-slate-900 text-xs"
                   />
                 </label>
 
-                <p className="mt-2 text-[10px] text-slate-400">
+                <p className="mt-1 text-[10px] text-slate-400">
                   This is general fitness information, not medical advice. If
                   you have health conditions, talk to a doctor before starting
                   any program.
@@ -184,9 +194,16 @@ export default function PlannerPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="mt-2 h-9 bg-sky-500 text-xs font-semibold text-slate-950 hover:bg-sky-400"
+                  className="mt-2 h-10 bg-sky-500 text-xs font-semibold text-slate-950 shadow-lg shadow-sky-900/20 hover:bg-sky-400 disabled:cursor-not-allowed"
                 >
-                  {loading ? "Generating plan..." : "Generate workout plan"}
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-900/40 border-t-slate-900" />
+                      Generating plan...
+                    </span>
+                  ) : (
+                    "Generate workout plan"
+                  )}
                 </Button>
 
                 {error && (
@@ -196,13 +213,13 @@ export default function PlannerPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-900/60 border-slate-800">
+          <Card className="bg-slate-900/70 border-slate-800/80 shadow-xl shadow-sky-900/10">
             <CardHeader>
-              <CardTitle className="text-lg font-medium">
+              <CardTitle className="text-lg font-medium tracking-tight text-slate-100">
                 Your FitGenie plan
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-sm leading-relaxed">
               {!plan && !loading && (
                 <p className="text-xs text-slate-400">
                   Submit your profile to see a structured weekly plan with
@@ -210,32 +227,63 @@ export default function PlannerPage() {
                 </p>
               )}
               {loading && (
-                <p className="text-xs text-slate-300">
-                  Thinking... building a safe, beginner-friendly plan for you.
-                </p>
+                <div className="flex flex-col gap-3 text-xs text-slate-300">
+                  <div className="h-2 w-24 rounded bg-slate-700/70 animate-pulse" />
+                  <LoadingPlanSkeleton />
+                  <p className="text-[11px] text-slate-400">
+                    Building a safe, structured plan for you...
+                  </p>
+                </div>
               )}
-              {plan && !loading && (
-                <article className="prose prose-invert max-w-none text-xs">
-                  {/* eslint-disable-next-line react/no-danger */}
-                  <div dangerouslySetInnerHTML={{ __html: markdownToHtml(plan) }} />
-                </article>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+      {plan && !loading && (
+        <article className="prose prose-invert max-w-none text-xs leading-relaxed">
+          {/* eslint-disable-next-line react/no-danger */}
+          <div dangerouslySetInnerHTML={{ __html: markdownToHtml(plan) }} />
+        </article>
+      )}
+    </CardContent>
+  </Card>
+</div>
       </main>
     </div>
   );
 }
 
 function markdownToHtml(markdown: string): string {
-  return markdown
+  let html = markdown
     .replace(/^### (.*$)/gim, "<h3>$1</h3>")
     .replace(/^## (.*$)/gim, "<h2>$1</h2>")
     .replace(/^# (.*$)/gim, "<h1>$1</h1>")
     .replace(/\*\*(.*)\*\*/gim, "<strong>$1</strong>")
     .replace(/\*(.*)\*/gim, "<em>$1</em>")
-    .replace(/^- (.*$)/gim, "<li>$1</li>")
+    .replace(/^-\s+(.*$)/gim, "<li>$1</li>")
+    .replace(/^\*\s+(.*$)/gim, "<li>$1</li>")
     .replace(/\n\n/g, "<br/><br/>")
     .trim();
+
+  if (html.includes("<li>")) {
+    html = html.replace(/(?:\s*<li>[\s\S]*?<\/li>)+/g, (match) => {
+      return `<ul class="list-disc pl-4 space-y-1">${match}</ul>`;
+    });
+  }
+
+  return html;
+}
+
+function LoadingPlanSkeleton() {
+  return (
+    <div className="space-y-3 animate-pulse">
+      <div className="h-4 w-40 rounded bg-slate-700/60" />
+      <div className="space-y-2">
+        <div className="h-3 w-full rounded bg-slate-700/60" />
+        <div className="h-3 w-[92%] rounded bg-slate-700/60" />
+        <div className="h-3 w-[88%] rounded bg-slate-700/60" />
+      </div>
+      <div className="space-y-2">
+        <div className="h-3 w-full rounded bg-slate-700/60" />
+        <div className="h-3 w-[94%] rounded bg-slate-700/60" />
+        <div className="h-3 w-[90%] rounded bg-slate-700/60" />
+      </div>
+    </div>
+  );
 }

@@ -25,7 +25,7 @@ export default function ChatPage() {
     const trimmed = input.trim();
     if (!trimmed || loading) return;
 
-    const newMessages = [...messages, { role: "user", content: trimmed }];
+    const newMessages: ChatMessage[] = [...messages, { role: "user", content: trimmed }];
     setMessages(newMessages);
     setInput("");
     setLoading(true);
