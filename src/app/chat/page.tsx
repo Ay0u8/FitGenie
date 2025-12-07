@@ -16,6 +16,13 @@ export default function ChatPage() {
     content:
       "Hi, I'm FitGenie. Ask me anything about beginner-friendly workouts, warm-ups, form, or how to structure your training. Remember: I can't give medical advice.",
   }]);
+  const quickPrompts = [
+    "Critique my split",
+    "Substitute for Bench Press",
+    "5-minute warm-up",
+    "Fix my squat form",
+    "Beginner dumbbell-only plan",
+  ];
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +79,18 @@ export default function ChatPage() {
             and gym basics. Answers are for general information only and are
             not a substitute for medical advice.
           </p>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {quickPrompts.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => setInput(prompt)}
+                className="rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1 text-xs text-slate-200 transition hover:border-sky-500 hover:text-sky-200"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
         </header>
 
         <Card className="flex min-h-[480px] flex-col bg-slate-900/60 border-slate-800">
