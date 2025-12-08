@@ -1,20 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Image from "next/image";
+import { useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import {
-  Clipboard,
-  X,
-  Dumbbell,
-  Check,
-  ChevronRight,
-  Maximize2,
-  Download,
-  Printer,
-  FileSpreadsheet,
+import { Clipboard, X, Dumbbell, Check, Maximize2, Download, Printer,   FileSpreadsheet,
 } from "lucide-react";
 import { exportWorkoutToExcel, parseStructuredData, type DayData, type ExerciseData } from "@/lib/excelExport";
 
@@ -38,6 +30,16 @@ type ParsedDay = {
   exercises: ParsedExercise[];
 };
 
+type ExerciseMedia = {
+  id: number;
+  name: string;
+  description: string;
+  media: {
+    type: "video" | "image";
+    assets: { id: number; url: string; isMain: boolean }[];
+  } | null;
+};
+
 export default function PlannerPage() {
   const [loading, setLoading] = useState(false);
   const [plan, setPlan] = useState<string | null>(null);
@@ -51,6 +53,11 @@ export default function PlannerPage() {
     daysPerWeek: number;
     programLengthWeeks: number;
   } | null>(null);
+  const [activeExercise, setActiveExercise] = useState<ParsedExercise | null>(null);
+  const [exerciseMedia, setExerciseMedia] = useState<ExerciseMedia | null>(null);
+  const [exerciseModalError, setExerciseModalError] = useState<string | null>(null);
+  const [exerciseModalLoading, setExerciseModalLoading] = useState(false);
+  const exerciseMediaCache = useRef<Record<string, ExerciseMedia | null>>({});
 
   const combinedInjuries = useMemo(() => {
     if (!selectedAreas.length) return injuriesText;
@@ -68,12 +75,59 @@ export default function PlannerPage() {
     return `${durationLabel}${daysLabel} ${goalLabel} Plan`.replace(/\s+/g, " ").trim();
   }, [planMeta]);
 
+  const handleExerciseDemo = async (exercise: ParsedExercise) => {
+    setActiveExercise(exercise);
+    setExerciseModalError(null);
+    setExerciseMedia(null);
+     setExerciseModalLoading(false);
+
+    const key = exercise.name.toLowerCase();
+    if (exerciseMediaCache.current[key] !== undefined) {
+      setExerciseMedia(exerciseMediaCache.current[key]);
+      return;
+    }
+
+    setExerciseModalLoading(true);
+    try {
+      const res = await fetch(`/api/exercise-media?name=${encodeURIComponent(exercise.name)}`);
+      if (res.status === 404) {
+        exerciseMediaCache.current[key] = null;
+        setExerciseMedia(null);
+        setExerciseModalLoading(false);
+        return;
+      }
+      if (!res.ok) {
+        throw new Error("No demo found for this exercise");
+      }
+      const data = await res.json();
+      exerciseMediaCache.current[key] = data.exercise ?? null;
+      setExerciseMedia(data.exercise ?? null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load exercise demo";
+      setExerciseModalError(message);
+      exerciseMediaCache.current[key] = null;
+    } finally {
+      setExerciseModalLoading(false);
+    }
+  };
+
+  const closeExerciseModal = () => {
+    setActiveExercise(null);
+    setExerciseMedia(null);
+    setExerciseModalError(null);
+    setExerciseModalLoading(false);
+  };
+
   async function handleSubmit(formData: FormData) {
     setLoading(true);
     setError(null);
     setPlan(null);
     setParsedDays([]);
     setPlanMeta(null);
+    setActiveExercise(null);
+    setExerciseMedia(null);
+    setExerciseModalError(null);
+    setExerciseModalLoading(false);
 
     const goalValue = formData.get("goal");
     const experienceValue = formData.get("experienceLevel");
@@ -441,7 +495,7 @@ export default function PlannerPage() {
                       {parsedDays.length > 0 ? (
                         <div className="max-h-[480px] overflow-y-auto space-y-3 pr-1 custom-scrollbar">
                           {parsedDays.map((day, index) => (
-                            <DaySection key={`${day.title}-${index}`} day={day} />
+                            <DaySection key={`${day.title}-${index}`} day={day} onViewExercise={handleExerciseDemo} />
                           ))}
                         </div>
                       ) : (
@@ -503,6 +557,15 @@ export default function PlannerPage() {
           </Card>
         </div>
       </main>
+      {activeExercise && (
+        <ExerciseModal
+          exercise={activeExercise}
+          media={exerciseMedia}
+          loading={exerciseModalLoading}
+          error={exerciseModalError}
+          onClose={closeExerciseModal}
+        />
+      )}
     </div>
   );
 }
@@ -632,7 +695,13 @@ function parseExerciseLine(line: string): ParsedExercise | null {
   };
 }
 
-function DaySection({ day }: { day: ParsedDay }) {
+function DaySection({
+  day,
+  onViewExercise,
+}: {
+  day: ParsedDay;
+  onViewExercise: (exercise: ParsedExercise) => void;
+}) {
   return (
     <section className="rounded-lg border border-slate-700/40 bg-slate-900/50 p-3 space-y-3">
       <div className="flex items-center justify-between">
@@ -642,7 +711,11 @@ function DaySection({ day }: { day: ParsedDay }) {
       {day.exercises.length > 0 ? (
         <div className="space-y-2">
           {day.exercises.map((exercise, index) => (
-            <ExerciseCard key={`${day.title}-${index}`} exercise={exercise} />
+            <ExerciseCard
+              key={`${day.title}-${index}`}
+              exercise={exercise}
+              onViewExercise={onViewExercise}
+            />
           ))}
         </div>
       ) : (
@@ -652,7 +725,13 @@ function DaySection({ day }: { day: ParsedDay }) {
   );
 }
 
-function ExerciseCard({ exercise }: { exercise: ParsedExercise }) {
+function ExerciseCard({
+  exercise,
+  onViewExercise,
+}: {
+  exercise: ParsedExercise;
+  onViewExercise: (exercise: ParsedExercise) => void;
+}) {
   // Check if we have structured data or just details string
   const hasStructuredData = exercise.sets || exercise.reps || exercise.load || exercise.rpe || exercise.rest;
 
@@ -663,7 +742,7 @@ function ExerciseCard({ exercise }: { exercise: ParsedExercise }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-slate-100 mb-1.5">{exercise.name}</p>
-        
+
         {hasStructuredData ? (
           <div className="space-y-1">
             {/* Primary workout metrics */}
@@ -684,7 +763,7 @@ function ExerciseCard({ exercise }: { exercise: ParsedExercise }) {
                 </span>
               )}
             </div>
-            
+
             {/* Secondary metrics */}
             {(exercise.rpe || exercise.rest) && (
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
@@ -701,7 +780,7 @@ function ExerciseCard({ exercise }: { exercise: ParsedExercise }) {
                 )}
               </div>
             )}
-            
+
             {/* Description/notes */}
             {exercise.description && (
               <p className="text-xs text-slate-400 leading-relaxed pt-0.5">
@@ -711,14 +790,22 @@ function ExerciseCard({ exercise }: { exercise: ParsedExercise }) {
           </div>
         ) : (
           <p className="text-xs text-slate-400">
-            {exercise.details || "See full plan for instructions"}
+            {exercise.details || "Open demo to see sets, reps, and cues"}
           </p>
         )}
       </div>
-      <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-sky-400 transition-colors flex-shrink-0 mt-0.5" />
+      <button
+        type="button"
+        onClick={() => onViewExercise(exercise)}
+        className="inline-flex items-center gap-1 rounded-md border border-slate-600/60 px-2 py-1 text-[11px] text-slate-200 hover:border-sky-500 hover:text-white transition"
+      >
+        <Maximize2 className="h-3.5 w-3.5" />
+        View demo
+      </button>
     </div>
   );
 }
+
 
 function BodyMap({
   selected,
@@ -1043,6 +1130,132 @@ function LoadingPlanSkeleton() {
         <div className="h-3 w-full rounded bg-slate-700/60" />
         <div className="h-3 w-[94%] rounded bg-slate-700/60" />
         <div className="h-3 w-[90%] rounded bg-slate-700/60" />
+      </div>
+    </div>
+  );
+}
+function ExerciseModal({
+  exercise,
+  media,
+  loading,
+  error,
+  onClose,
+}: {
+  exercise: ParsedExercise;
+  media: ExerciseMedia | null;
+  loading: boolean;
+  error: string | null;
+  onClose: () => void;
+}) {
+  const renderMedia = () => {
+    if (!media?.media) {
+      return (
+        <p className="text-xs text-slate-400">
+          Wger did not return demo media for this exercise. Step-by-step cues are shown above.
+        </p>
+      );
+    }
+
+    if (media.media.type === "video") {
+      return (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-sky-400 uppercase tracking-wide">Video demos</p>
+          <div className="grid gap-3 md:grid-cols-2">
+            {media.media.assets.map((asset) => (
+              <div
+                key={asset.id}
+                className="overflow-hidden rounded-lg border border-slate-700/60 bg-slate-900/80"
+              >
+                <video
+                  controls
+                  loop
+                  className="w-full rounded-lg"
+                  style={{ maxHeight: "320px" }}
+                  preload="metadata"
+                >
+                  <source src={asset.url} type="video/mp4" />
+                  Your browser does not support embedded videos.
+                </video>
+                {asset.isMain && (
+                  <p className="px-3 py-2 text-[11px] uppercase tracking-wide text-slate-400">
+                    Primary demo
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Image references</p>
+        <div className="grid gap-3 md:grid-cols-2">
+          {media.media.assets.map((asset) => (
+            <div
+              key={asset.id}
+              className="overflow-hidden rounded-lg border border-slate-700/60 bg-slate-900/80"
+            >
+              <Image
+                src={asset.url}
+                alt={media.name}
+                width={640}
+                height={320}
+                className="h-52 w-full object-cover"
+                loading="lazy"
+              />
+              {asset.isMain && (
+                <p className="px-3 py-2 text-[11px] uppercase tracking-wide text-slate-400">
+                  Primary angle
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6">
+      <div className="relative w-full max-w-2xl rounded-2xl border border-slate-700/60 bg-slate-900/95 p-5 shadow-2xl">
+        <button
+          type="button"
+          className="absolute right-4 top-4 rounded-full border border-slate-700/70 p-1 text-slate-400 hover:text-white"
+          onClick={onClose}
+        >
+          <X className="h-4 w-4" />
+        </button>
+        <div className="space-y-3 pr-6">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Exercise demo</p>
+            <h2 className="text-2xl font-semibold text-white">{exercise.name}</h2>
+          </div>
+          {loading && (
+            <div className="flex items-center gap-2 rounded-md border border-slate-700/60 bg-slate-900/80 p-3 text-sm text-slate-300">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+              Fetching demo from Wger...
+            </div>
+          )}
+          {error && (
+            <p className="text-sm text-red-400">
+              {error} <span className="text-slate-400">(try searching manually in your app)</span>
+            </p>
+          )}
+          {!loading && !error && media && (
+            <div className="space-y-3">
+              <p className="text-sm text-slate-200 whitespace-pre-line">{media.description}</p>
+              {renderMedia()}
+            </div>
+          )}
+          {!loading && !error && !media && (
+            <p className="text-sm text-slate-400">
+              No Wger entry was found for this exercise. Try using another exercise name or view the
+              full plan text.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
