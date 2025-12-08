@@ -598,6 +598,10 @@ function BodyMap({
     { key: "Abs", cx: 103, cy: 75, r: 4.5 },
     { key: "Left forearm", cx: 75, cy: 80, r: 3 },
     { key: "Right forearm", cx: 131, cy: 80, r: 3 },
+    { key: "Left wrist", cx: 72, cy: 95, r: 2.5 },
+    { key: "Right wrist", cx: 133.5, cy: 95, r: 2.5 },
+    { key: "Left hand", cx: 69, cy: 105, r: 3 },
+    { key: "Right hand", cx:137, cy: 105, r: 3 },
     { key: "Left hip", cx: 95, cy: 95, r: 3 },
     { key: "Right hip", cx: 111, cy: 95, r: 3 },
     { key: "Left quad", cx: 92, cy: 130, r: 4 },
@@ -608,6 +612,8 @@ function BodyMap({
     { key: "Right shin", cx: 114, cy: 172, r: 3 },
     { key: "Left ankle", cx: 94, cy: 190, r: 2.5 },
     { key: "Right ankle", cx: 112, cy: 190, r: 2.5 },
+    { key: "Left foot", cx: 95, cy: 200, r: 3 },
+    { key: "Right foot", cx: 111, cy: 200, r: 3 },
   ];
 
   // Back body hotspots - aligned to body silhouette (viewBox 0 0 206.326 206.326)
@@ -623,6 +629,10 @@ function BodyMap({
     { key: "Right tricep", cx: 124, cy: 55, r: 3 },
     { key: "Mid back", cx: 103, cy: 60, r: 4 },
     { key: "Lower back", cx: 103, cy: 82, r: 4.5 },
+    { key: "Left wrist (back)", cx: 72, cy: 95, r: 2.5 },
+    { key: "Right wrist (back)", cx: 133.5, cy: 95, r: 2.5 },
+    { key: "Left hand (back)", cx: 69, cy: 105, r: 3 },
+    { key: "Right hand (back)", cx: 137, cy: 105, r: 3 },
     { key: "Glutes", cx: 103, cy: 105, r: 5 },
     { key: "Left hamstring", cx: 92, cy: 130, r: 4 },
     { key: "Right hamstring", cx: 114, cy: 130, r: 4 },
@@ -630,6 +640,8 @@ function BodyMap({
     { key: "Right calf", cx: 114, cy: 172, r: 3.5 },
     { key: "Left Achilles", cx: 94, cy: 190, r: 2.5 },
     { key: "Right Achilles", cx: 112, cy: 190, r: 2.5 },
+    { key: "Left heel", cx: 95, cy: 200, r: 3 },
+    { key: "Right heel", cx: 111, cy: 200, r: 3 },
   ];
 
   // Get all muscle keys for select all
