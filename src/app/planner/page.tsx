@@ -26,6 +26,11 @@ export default function PlannerPage() {
   const [injuriesText, setInjuriesText] = useState("");
   const [copied, setCopied] = useState(false);
   const [exercises, setExercises] = useState<ParsedExercise[]>([]);
+  const [planMeta, setPlanMeta] = useState<{
+    goal: string;
+    daysPerWeek: number;
+    programLengthWeeks: number;
+  } | null>(null);
 
   const combinedInjuries = useMemo(() => {
     if (!selectedAreas.length) return injuriesText;
@@ -34,29 +39,57 @@ export default function PlannerPage() {
   }, [selectedAreas, injuriesText]);
 
   const planTitle = useMemo(() => {
-    const goal = exercises.length > 0 ? "Muscle Building" : "";
-    const days = exercises.length > 0 ? "3-Day" : "";
-    const title = `Your ${days} ${goal} Plan`.replace(/\s+/g, " ").trim();
-    return title || "Your Workout Plan";
-  }, [exercises]);
+    if (!planMeta) {
+      return "Your Workout Plan";
+    }
+    const daysLabel = planMeta.daysPerWeek === 1 ? "1-Day" : `${planMeta.daysPerWeek}-Day`;
+    const durationLabel = planMeta.programLengthWeeks > 1 ? `${planMeta.programLengthWeeks}-Week ` : "";
+    const goalLabel = planMeta.goal || "Training";
+    return `${durationLabel}${daysLabel} ${goalLabel} Plan`.replace(/\s+/g, " ").trim();
+  }, [planMeta]);
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
     setError(null);
     setPlan(null);
     setExercises([]);
+    setPlanMeta(null);
+
+    const goalValue = formData.get("goal");
+    const experienceValue = formData.get("experienceLevel");
+    const goal =
+      typeof goalValue === "string" && goalValue.trim().length > 0 ? goalValue : goals[0];
+    const experienceLevel =
+      typeof experienceValue === "string" && experienceValue.trim().length > 0
+        ? experienceValue
+        : levels[0];
+    const daysPerWeek = Number(formData.get("daysPerWeek")) || 1;
+    const timePerWorkoutMinutes = Number(formData.get("timePerWorkoutMinutes")) || 45;
+    const rawProgramLength = Number(formData.get("programLengthWeeks"));
+    const programLengthWeeks =
+      Number.isFinite(rawProgramLength) && rawProgramLength > 0
+        ? Math.min(rawProgramLength, 12)
+        : 1;
+    const equipmentInput = formData.get("equipment");
+    const equipment =
+      typeof equipmentInput === "string"
+        ? equipmentInput
+            .split(",")
+            .map((e) => e.trim())
+            .filter(Boolean)
+        : [];
+    const preferencesValue = formData.get("preferences");
+    const preferences = typeof preferencesValue === "string" ? preferencesValue : "";
 
     const payload = {
-      goal: formData.get("goal"),
-      experienceLevel: formData.get("experienceLevel"),
-      daysPerWeek: Number(formData.get("daysPerWeek")),
-      timePerWorkoutMinutes: Number(formData.get("timePerWorkoutMinutes")),
-      equipment: String(formData.get("equipment"))
-        .split(",")
-        .map((e) => e.trim())
-        .filter(Boolean),
+      goal,
+      experienceLevel,
+      daysPerWeek,
+      timePerWorkoutMinutes,
+      programLengthWeeks,
+      equipment,
       injuries: combinedInjuries,
-      preferences: formData.get("preferences"),
+      preferences,
     };
 
     try {
@@ -73,6 +106,7 @@ export default function PlannerPage() {
 
       const data = await res.json();
       setPlan(data.plan);
+      setPlanMeta({ goal, daysPerWeek, programLengthWeeks });
       setExercises(parseExercisesFromPlan(data.plan));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong";
@@ -176,6 +210,21 @@ export default function PlannerPage() {
                     />
                   </label>
                 </div>
+
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-medium text-slate-200">Program length (weeks)</span>
+                  <Input
+                    name="programLengthWeeks"
+                    type="number"
+                    min={1}
+                    max={12}
+                    defaultValue={4}
+                    className="h-10 border-slate-700 bg-slate-900 text-xs"
+                  />
+                  <span className="text-[10px] text-slate-400">
+                    FitGenie will explain how to run this plan for the number of weeks you enter.
+                  </span>
+                </label>
 
                 <label className="flex flex-col gap-1">
                   <span className="text-xs font-medium text-slate-200">Available equipment</span>

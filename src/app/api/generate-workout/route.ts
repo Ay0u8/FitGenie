@@ -12,12 +12,21 @@ export async function POST(req: NextRequest) {
       experienceLevel,
       daysPerWeek,
       timePerWorkoutMinutes,
+      programLengthWeeks,
       equipment,
       injuries,
       preferences,
     } = body ?? {};
 
-    if (!goal || !experienceLevel || !daysPerWeek || !timePerWorkoutMinutes) {
+    const numericDays = Number(daysPerWeek);
+    const numericTime = Number(timePerWorkoutMinutes);
+    const numericWeeksRaw = Number(programLengthWeeks);
+    const numericWeeks =
+      Number.isFinite(numericWeeksRaw) && numericWeeksRaw > 0
+        ? Math.min(numericWeeksRaw, 12)
+        : 1;
+
+    if (!goal || !experienceLevel || !numericDays || !numericTime) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -27,11 +36,17 @@ export async function POST(req: NextRequest) {
     const userDescription = `User profile:
 - Goal: ${goal}
 - Experience level: ${experienceLevel}
-- Days per week: ${daysPerWeek}
-- Time per workout (minutes): ${timePerWorkoutMinutes}
+- Days per week: ${numericDays}
+- Time per workout (minutes): ${numericTime}
+- Program length (weeks): ${numericWeeks}
 - Available equipment: ${Array.isArray(equipment) && equipment.length > 0 ? equipment.join(", ") : "Not specified"}
 - Injuries / limitations: ${injuries || "None mentioned"}
 - Preferences: ${preferences || "None mentioned"}
+
+Plan requirements:
+- Build exactly ${numericDays} distinct training day${numericDays === 1 ? "" : "s"} each week and label them clearly.
+- Keep each workout close to ${numericTime} minutes unless the user stated otherwise.
+- Explain how to follow or progress the structure for ${numericWeeks} week${numericWeeks === 1 ? "" : "s"} (mention deload or repeat guidance if needed).
 
 Please generate a short, structured weekly workout plan following the instructions.`;
 
