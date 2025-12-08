@@ -493,13 +493,13 @@ export default function PlannerPage() {
                     <div className="space-y-2">
                       <p className="text-xs font-medium text-muted-foreground">Weekly breakdown</p>
                       {parsedDays.length > 0 ? (
-                        <div className="max-h-[480px] overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+                        <div className="max-h-[calc(100vh-380px)] min-h-[300px] overflow-y-auto space-y-3 pr-1 custom-scrollbar">
                           {parsedDays.map((day, index) => (
                             <DaySection key={`${day.title}-${index}`} day={day} onViewExercise={handleExerciseDemo} />
                           ))}
                         </div>
                       ) : (
-                        <div className="text-xs text-muted-foreground py-2 max-h-[400px] overflow-y-auto custom-scrollbar">
+                        <div className="text-xs text-muted-foreground py-2 max-h-[calc(100vh-380px)] min-h-[300px] overflow-y-auto custom-scrollbar">
                           <div
                             dangerouslySetInnerHTML={{ __html: markdownToHtml(plan) }}
                             className="prose dark:prose-invert prose-xs max-w-none"
