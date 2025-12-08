@@ -4,6 +4,7 @@ import "./globals.css";
 import Link from "next/link";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AuthButtons } from "@/components/auth/auth-buttons";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,16 +44,17 @@ export default function RootLayout({
                 FitGenie
               </Link>
               <div className="flex items-center gap-4 text-xs">
-                <Link
-                  href="/planner"
-                  className="transition hover:text-primary"
-                >
+                <Link href="/planner" className="transition hover:text-primary">
                   Planner
                 </Link>
                 <Link href="/chat" className="transition hover:text-primary">
                   Chat
                 </Link>
+                <Link href="/dashboard" className="transition hover:text-primary">
+                  Dashboard
+                </Link>
                 <ThemeToggle />
+                <AuthButtons />
               </div>
             </nav>
           </div>

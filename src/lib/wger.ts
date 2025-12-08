@@ -69,16 +69,6 @@ function normalizeName(name: string) {
     .trim();
 }
 
-function simplifyQuery(name: string) {
-  return name
-    .replace(/\(.*?\)/g, "")
-    .replace(/\d+/g, "")
-    .replace(/-/g, " ")
-    .replace(/\b(upper|lower|full|day|program|plan|strength|beginner|advanced|routine)\b/gi, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 export async function getExerciseMediaByName(name: string) {
   const trimmed = name.trim();
   if (!trimmed) return null;
@@ -194,16 +184,33 @@ async function getAllExercises(): Promise<ExerciseInfo[]> {
 }
 
 async function lookupExercise(name: string) {
+  const normalizedSearch = normalizeName(name);
+  const searchWords = normalizedSearch.split(/\s+/).filter(Boolean);
+
   // Get all exercises
   const allExercises = await getAllExercises();
 
   // Filter to only exercises with media (videos or images)
   const exercisesWithMedia = allExercises.filter(
-    ex => ex.videos.length > 0 || ex.images.length > 0
+    (ex) => ex.videos.length > 0 || ex.images.length > 0
   );
 
   // If we have exercises with media, prefer those
-  const searchPool = exercisesWithMedia.length > 0 ? exercisesWithMedia : allExercises;
+  const searchPool =
+    exercisesWithMedia.length > 0 ? exercisesWithMedia : allExercises;
 
-  return searchPool.length > 0 ? searchPool : null;
+  if (searchWords.length === 0) {
+    return searchPool;
+  }
+
+  const filtered = searchPool.filter((exercise) => {
+    const englishTrans =
+      exercise.translations.find((t) => t.language === 2) ||
+      exercise.translations[0];
+    if (!englishTrans) return false;
+    const exerciseName = normalizeName(englishTrans.name);
+    return searchWords.every((word) => exerciseName.includes(word));
+  });
+
+  return filtered.length > 0 ? filtered : searchPool;
 }

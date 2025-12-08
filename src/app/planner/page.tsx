@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useMemo, useRef, useState } from "react";
+import { useSupabaseSession } from "@/hooks/use-supabase-session";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,6 +50,11 @@ export default function PlannerPage() {
   const [exerciseModalError, setExerciseModalError] = useState<string | null>(null);
   const [exerciseModalLoading, setExerciseModalLoading] = useState(false);
   const exerciseMediaCache = useRef<Record<string, ExerciseMedia | null>>({});
+  const { session } = useSupabaseSession();
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const combinedInjuries = useMemo(() => {
     if (!selectedAreas.length) return injuriesText;
@@ -109,12 +115,52 @@ export default function PlannerPage() {
     setExerciseModalLoading(false);
   };
 
+  const handleSavePlan = async () => {
+    if (!plan || !planMeta || saveStatus === "saving") return;
+    if (!session) {
+      setSaveError("Sign in to save your workout plans.");
+      return;
+    }
+    setSaveStatus("saving");
+    setSaveError(null);
+
+    try {
+      const res = await fetch("/api/workouts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: planTitle,
+          planMarkdown: plan,
+          planMeta: {
+            ...planMeta,
+            days: parsedDays,
+          },
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to save plan");
+      }
+
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2500);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to save plan";
+      setSaveError(message);
+      setSaveStatus("error");
+    }
+  };
+
   async function handleSubmit(formData: FormData) {
     setLoading(true);
     setError(null);
     setPlan(null);
     setParsedDays([]);
     setPlanMeta(null);
+    setSaveStatus("idle");
+    setSaveError(null);
     setActiveExercise(null);
     setExerciseMedia(null);
     setExerciseModalError(null);
@@ -466,6 +512,25 @@ export default function PlannerPage() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
+                    {session ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSavePlan}
+                        className="flex-1 min-w-[140px] h-9 border-slate-600/60 text-slate-200 hover:text-white text-xs"
+                        disabled={saveStatus === "saving"}
+                      >
+                        {saveStatus === "saving"
+                          ? "Saving..."
+                          : saveStatus === "saved"
+                            ? "Saved!"
+                            : "Save to FitGenie"}
+                      </Button>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground">
+                        Sign in to save this plan for later.
+                      </p>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
@@ -498,6 +563,9 @@ export default function PlannerPage() {
                       Print / PDF
                     </Button>
                   </div>
+                  {saveError && (
+                    <p className="text-[11px] text-red-400">{saveError}</p>
+                  )}
                 </div>
               )}
             </CardContent>
