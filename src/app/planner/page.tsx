@@ -6,13 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Clipboard, X, Dumbbell, Check, Maximize2, Download, Printer } from "lucide-react";
+import { Clipboard, X, Dumbbell, Check, Maximize2, Download, Printer,   FileSpreadsheet,
+} from "lucide-react";
+import { exportWorkoutToExcel, parseStructuredData, type DayData, type ExerciseData } from "@/lib/excelExport";
 
 const goals = ["Build muscle", "Lose fat", "General fitness", "Strength", "Endurance"];
 const levels = ["Beginner", "Intermediate", "Advanced"];
 
 type ParsedExercise = {
   name: string;
+  sets?: number;
+  reps?: string;
+  load?: string;
+  rpe?: string;
+  rest?: string;
+  description?: string;
+  // Keep details for backward compatibility with markdown parsing
   details?: string;
 };
 
@@ -172,7 +181,15 @@ export default function PlannerPage() {
       const data = await res.json();
       setPlan(data.plan);
       setPlanMeta({ goal, daysPerWeek, programLengthWeeks });
-      setParsedDays(parsePlanByDay(data.plan));
+
+      // Try to parse JSON data first, fallback to markdown parsing
+      const jsonDays = parseJsonToParsedDays(data.plan);
+      if (jsonDays.length > 0) {
+        setParsedDays(jsonDays);
+      } else {
+        // Fallback to markdown parsing if JSON not available
+        setParsedDays(parsePlanByDay(data.plan));
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong";
       setError(message);
@@ -181,19 +198,34 @@ export default function PlannerPage() {
     }
   }
 
+  /**
+   * Strip the STRUCTURED_DATA JSON section from the plan
+   * Returns only the markdown content
+   */
+  const stripStructuredData = (planText: string): string => {
+    // Find and remove everything from ## STRUCTURED_DATA onwards
+    const match = planText.match(/([\s\S]*?)(?:\n\s*##\s*STRUCTURED_DATA[\s\S]*)?$/i);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+    return planText;
+  };
+
   const handleCopy = () => {
     if (!plan) return;
-    navigator.clipboard.writeText(plan).catch(() => null);
+    const markdownOnly = stripStructuredData(plan);
+    navigator.clipboard.writeText(markdownOnly).catch(() => null);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownloadMarkdown = () => {
     if (!plan) return;
+    const markdownOnly = stripStructuredData(plan);
     const fileName =
       planTitle.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() ||
       "fitgenie-plan";
-    const blob = new Blob([plan], { type: "text/markdown;charset=utf-8" });
+    const blob = new Blob([markdownOnly], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -206,9 +238,10 @@ export default function PlannerPage() {
 
   const handlePrintPlan = () => {
     if (!plan) return;
+    const markdownOnly = stripStructuredData(plan);
     const printWindow = window.open("", "_blank", "width=900,height=700");
     if (!printWindow) return;
-    const htmlContent = markdownToHtml(plan);
+    const htmlContent = markdownToHtml(markdownOnly);
     printWindow.document.write(`<!DOCTYPE html>
 <html>
   <head>
@@ -234,6 +267,17 @@ export default function PlannerPage() {
   </body>
 </html>`);
     printWindow.document.close();
+  };
+
+  const handleDownloadExcel = () => {
+    if (!plan || !planMeta) return;
+
+    const success = exportWorkoutToExcel(plan, planTitle, planMeta.programLengthWeeks);
+
+    if (!success) {
+      setError("Could not generate Excel file. The workout plan may not contain structured data.");
+      setTimeout(() => setError(null), 5000);
+    }
   };
 
   return (
@@ -440,25 +484,25 @@ export default function PlannerPage() {
 
               {plan && !loading && (
                 <div className="space-y-4">
-                  <div className="rounded-xl border border-border bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-4">
-                    <p className="text-[10px] uppercase tracking-wider text-foreground0 mb-1">
+                  <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
                       Generated Plan Card
                     </p>
-                    <h3 className="text-xl font-bold text-white mb-4">{planTitle}</h3>
+                    <h3 className="text-xl font-bold text-foreground mb-4">{planTitle}</h3>
 
                     <div className="space-y-2">
                       <p className="text-xs font-medium text-muted-foreground">Weekly breakdown</p>
                       {parsedDays.length > 0 ? (
                         <div className="max-h-[480px] overflow-y-auto space-y-3 pr-1 custom-scrollbar">
-                          {parsedDays.map((day) => (
-                            <DaySection key={day.title} day={day} onViewExercise={handleExerciseDemo} />
+                          {parsedDays.map((day, index) => (
+                            <DaySection key={`${day.title}-${index}`} day={day} onViewExercise={handleExerciseDemo} />
                           ))}
                         </div>
                       ) : (
                         <div className="text-xs text-muted-foreground py-2 max-h-[400px] overflow-y-auto custom-scrollbar">
                           <div
                             dangerouslySetInnerHTML={{ __html: markdownToHtml(plan) }}
-                            className="prose prose-invert prose-xs max-w-none"
+                            className="prose dark:prose-invert prose-xs max-w-none"
                           />
                         </div>
                       )}
@@ -470,7 +514,7 @@ export default function PlannerPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleCopy}
-                      className="flex-1 min-w-[140px] h-9 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 text-xs"
+                      className="flex-1 min-w-[140px] h-9 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 text-xs"
                     >
                       {copied ? (
                         <Check className="h-3.5 w-3.5 mr-1.5" />
@@ -483,7 +527,7 @@ export default function PlannerPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleDownloadMarkdown}
-                      className="flex-1 min-w-[140px] h-9 border-input text-foreground hover:text-white text-xs"
+                      className="flex-1 min-w-[140px] h-9 border-input text-foreground hover:bg-accent hover:text-foreground text-xs"
                     >
                       <Download className="h-3.5 w-3.5 mr-1.5" />
                       Download .md
@@ -492,10 +536,19 @@ export default function PlannerPage() {
                       variant="outline"
                       size="sm"
                       onClick={handlePrintPlan}
-                      className="flex-1 min-w-[140px] h-9 border-input text-foreground hover:text-white text-xs"
+                      className="flex-1 min-w-[140px] h-9 border-input text-foreground hover:bg-accent hover:text-foreground text-xs"
                     >
                       <Printer className="h-3.5 w-3.5 mr-1.5" />
                       Print / PDF
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadExcel}
+                      className="flex-1 min-w-[140px] h-9 bg-sky-500/10 border-sky-500/30 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 text-xs"
+                    >
+                      <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5" />
+                      Download Excel
                     </Button>
                   </div>
                 </div>
@@ -536,6 +589,50 @@ function markdownToHtml(markdown: string): string {
   }
 
   return html;
+}
+
+/**
+ * Convert JSON structured data to ParsedDay format for frontend display
+ * Only displays the first week since all weeks are the same
+ */
+function parseJsonToParsedDays(planText: string): ParsedDay[] {
+  try {
+    const jsonData = parseStructuredData(planText);
+    if (!jsonData || jsonData.length === 0) {
+      return [];
+    }
+
+    const parsedDays: ParsedDay[] = [];
+
+    // Only process days from week 1 to avoid duplicates
+    const firstWeekDays = jsonData.filter((dayData: DayData) => dayData.week === 1);
+
+    firstWeekDays.forEach((dayData: DayData) => {
+      const dayTitle = `Day ${dayData.day}`;
+
+      const exercises: ParsedExercise[] = dayData.exercises.map((ex: ExerciseData) => {
+        return {
+          name: ex.exercise,
+          sets: ex.sets,
+          reps: ex.reps,
+          load: ex.load,
+          rpe: ex.rpe,
+          rest: ex.rest,
+          description: ex.description,
+        };
+      });
+
+      parsedDays.push({
+        title: dayTitle,
+        exercises,
+      });
+    });
+
+    return parsedDays;
+  } catch (error) {
+    console.error("Failed to parse JSON structured data:", error);
+    return [];
+  }
 }
 
 function parsePlanByDay(plan: string): ParsedDay[] {
@@ -635,21 +732,72 @@ function ExerciseCard({
   exercise: ParsedExercise;
   onViewExercise: (exercise: ParsedExercise) => void;
 }) {
+  // Check if we have structured data or just details string
+  const hasStructuredData = exercise.sets || exercise.reps || exercise.load || exercise.rpe || exercise.rest;
+
   return (
-    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted border border-border hover:border-sky-500/30 transition-all group">
-      <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center overflow-hidden">
-        <Dumbbell className="h-5 w-5 text-primary/70" />
+    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border hover:border-sky-500/50 transition-all group">
+      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center border border-border">
+        <Dumbbell className="h-4 w-4 text-sky-500 dark:text-sky-400" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground truncate">{exercise.name}</p>
-        <p className="text-xs text-muted-foreground">
-          {exercise.details || "Open demo to see sets, reps, and cues"}
-        </p>
+        <p className="text-sm font-semibold text-foreground mb-1.5">{exercise.name}</p>
+
+        {hasStructuredData ? (
+          <div className="space-y-1">
+            {/* Primary workout metrics */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+              {exercise.sets && (
+                <span className="text-muted-foreground">
+                  <span className="font-medium text-sky-600 dark:text-sky-400">{exercise.sets}</span> sets
+                </span>
+              )}
+              {exercise.reps && (
+                <span className="text-muted-foreground">
+                  <span className="font-medium text-emerald-600 dark:text-emerald-400">{exercise.reps}</span> reps
+                </span>
+              )}
+              {exercise.load && (
+                <span className="text-muted-foreground">
+                  <span className="font-medium text-foreground">{exercise.load}</span>
+                </span>
+              )}
+            </div>
+
+            {/* Secondary metrics */}
+            {(exercise.rpe || exercise.rest) && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                {exercise.rpe && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
+                    <span className="text-[10px] font-medium">RPE</span>
+                    <span className="font-semibold">{exercise.rpe}</span>
+                  </span>
+                )}
+                {exercise.rest && (
+                  <span className="text-muted-foreground">
+                    Rest: <span className="text-foreground/80">{exercise.rest}</span>
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Description/notes */}
+            {exercise.description && (
+              <p className="text-xs text-muted-foreground leading-relaxed pt-0.5">
+                {exercise.description}
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            {exercise.details || "Open demo to see sets, reps, and cues"}
+          </p>
+        )}
       </div>
       <button
         type="button"
         onClick={() => onViewExercise(exercise)}
-        className="inline-flex items-center gap-1 rounded-md border border-input px-2 py-1 text-[11px] text-foreground hover:border-sky-500 hover:text-white transition"
+        className="inline-flex items-center gap-1 rounded-md border border-input px-2 py-1 text-[11px] text-foreground hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-400 transition"
       >
         <Maximize2 className="h-3.5 w-3.5" />
         View demo
@@ -787,8 +935,8 @@ function BodyMap({
     return (
       <div className="flex flex-col items-center">
         <span className={`text-muted-foreground mb-2 uppercase tracking-wider ${size === "large" ? "text-sm" : "text-[10px]"}`}>{label}</span>
-        <svg 
-          viewBox="0 0 206.326 206.326" 
+        <svg
+          viewBox="0 0 206.326 206.326"
           style={{ width: `${svgSize.width}px`, height: 'auto', maxHeight: `${svgSize.maxHeight}px` }}
         >
           <defs>
@@ -807,7 +955,7 @@ function BodyMap({
   return (
     <>
       {/* Expanded Modal View */}
-      <div 
+      <div
         className={`fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm transition-all duration-300 ease-out ${
           isExpanded ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
         }`}
@@ -816,7 +964,7 @@ function BodyMap({
           setIsExpanded(false);
         }}
       >
-        <div 
+        <div
           className={`relative w-full max-w-4xl mx-4 p-8 rounded-2xl border border-input bg-card/95 shadow-2xl transition-all duration-300 ease-out ${
             isExpanded ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
           }`}
@@ -915,7 +1063,7 @@ function BodyMap({
       </div>
 
       {/* Compact View */}
-      <div 
+      <div
         className="mt-3 rounded-xl border border-border bg-background/70 p-4"
         onClick={(e) => e.stopPropagation()}
       >
@@ -1070,42 +1218,107 @@ function ExerciseModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 px-4 py-6">
-      <div className="relative w-full max-w-2xl rounded-2xl border border-border bg-card/95 p-5 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm px-4 py-6">
+      <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl p-6">
         <button
           type="button"
-          className="absolute right-4 top-4 rounded-full border border-border p-1 text-muted-foreground hover:text-white"
+          className="absolute right-5 top-5 rounded-full border border-border p-1.5 text-muted-foreground hover:text-foreground hover:border-sky-500/50 transition-colors"
           onClick={onClose}
         >
           <X className="h-4 w-4" />
         </button>
-        <div className="space-y-3 pr-6">
+
+        <div className="space-y-5 pr-8">
+          {/* Header */}
           <div>
-            <p className="text-[11px] uppercase tracking-[0.2em] text-foreground0">Exercise demo</p>
-            <h2 className="text-2xl font-semibold text-white">{exercise.name}</h2>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-1">Exercise Details</p>
+            <h2 className="text-2xl font-semibold text-foreground mb-3">{exercise.name}</h2>
+
+            {/* Workout Parameters - Show if structured data exists */}
+            {(exercise.sets || exercise.reps || exercise.load || exercise.rpe || exercise.rest) && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 p-4 rounded-lg bg-muted/50 border border-border">
+                {exercise.sets && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Sets</p>
+                    <p className="text-xl font-bold text-sky-600 dark:text-sky-400">{exercise.sets}</p>
+                  </div>
+                )}
+                {exercise.reps && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Reps</p>
+                    <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{exercise.reps}</p>
+                  </div>
+                )}
+                {exercise.load && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Load</p>
+                    <p className="text-base font-semibold text-foreground">{exercise.load}</p>
+                  </div>
+                )}
+                {exercise.rpe && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">RPE</p>
+                    <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-orange-500/15 border border-orange-500/30">
+                      <span className="text-base font-bold text-orange-600 dark:text-orange-400">{exercise.rpe}</span>
+                      <span className="text-[10px] text-orange-500/70">/10</span>
+                    </div>
+                  </div>
+                )}
+                {exercise.rest && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Rest</p>
+                    <p className="text-sm font-medium text-foreground">{exercise.rest}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Exercise Description/Notes */}
+            {exercise.description && (
+              <div className="mt-3 p-3 rounded-lg bg-muted/30 border border-border">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Form Cues & Notes</p>
+                <p className="text-sm text-foreground/90 leading-relaxed">{exercise.description}</p>
+              </div>
+            )}
           </div>
+
+          {/* Loading State */}
           {loading && (
-            <div className="flex items-center gap-2 rounded-md border border-border bg-card p-3 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
               Fetching demo from Wger...
             </div>
           )}
+
+          {/* Error State */}
           {error && (
-            <p className="text-sm text-destructive">
-              {error} <span className="text-muted-foreground">(try searching manually in your app)</span>
-            </p>
+            <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+              <p className="text-sm text-destructive">
+                {error} <span className="text-muted-foreground">(try searching manually in your app)</span>
+              </p>
+            </div>
           )}
+
+          {/* Media Content */}
           {!loading && !error && media && (
-            <div className="space-y-3">
-              <p className="text-sm text-foreground whitespace-pre-line">{media.description}</p>
+            <div className="space-y-4">
+              {media.description && (
+                <div className="p-3 rounded-lg bg-sky-500/5 border border-sky-500/20">
+                  <p className="text-[10px] uppercase tracking-wider text-sky-600 dark:text-sky-400 mb-1.5">Exercise Description</p>
+                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{media.description}</p>
+                </div>
+              )}
               {renderMedia()}
             </div>
           )}
+
+          {/* No Media State */}
           {!loading && !error && !media && (
-            <p className="text-sm text-muted-foreground">
-              No Wger entry was found for this exercise. Try using another exercise name or view the
-              full plan text.
-            </p>
+            <div className="rounded-lg border border-border bg-muted/20 p-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                No Wger entry was found for this exercise. The workout parameters and form cues are shown above.
+              </p>
+            </div>
           )}
         </div>
       </div>
