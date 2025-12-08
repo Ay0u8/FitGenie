@@ -60,8 +60,9 @@ export default function ChatPage() {
         ...prev,
         { role: "assistant", content: data.reply as string },
       ]);
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setError(message);
     } finally {
       setLoading(false);
     }
