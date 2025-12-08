@@ -1,36 +1,147 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FitGenie 🏋️‍♂️
 
-## Getting Started
+An AI-powered personalized workout plan generator built with Next.js and Groq AI.
 
-First, run the development server:
+![FitGenie](https://img.shields.io/badge/Next.js-16.0.7-black?logo=next.js)
+![React](https://img.shields.io/badge/React-19.2.0-blue?logo=react)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC?logo=tailwind-css)
+![Groq AI](https://img.shields.io/badge/Groq-AI-orange)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 📋 Overview
+
+FitGenie is a web application that generates personalized workout plans based on user profiles, including:
+- **Fitness goals** (Build muscle, Lose fat, General fitness, Strength, Endurance)
+- **Experience level** (Beginner, Intermediate, Advanced)
+- **Available equipment**
+- **Injuries/limitations** with an interactive body map
+- **Personal preferences**
+
+## ✨ Features
+
+- 🤖 **AI-Powered Plans**: Uses Groq AI (Llama model) to generate customized workout routines
+- 🗺️ **Interactive Body Map**: Click on body parts to indicate injuries/discomfort areas (front & back view)
+- 📱 **Responsive Design**: Works on desktop and mobile devices
+- 💬 **AI Chat Assistant**: Get fitness advice and ask questions about your workout
+- 🎨 **Modern UI**: Dark theme with smooth animations using Tailwind CSS
+
+## 🛠️ Tech Stack
+
+- **Framework**: Next.js 16.0.7 (App Router)
+- **UI Library**: React 19.2.0
+- **Styling**: Tailwind CSS 4.x
+- **AI**: Groq SDK (Llama model)
+- **Components**: Radix UI, Lucide Icons
+- **Language**: TypeScript
+
+## 📦 Prerequisites
+
+- [Node.js](https://nodejs.org/) v18.17 or later
+- npm (comes with Node.js), yarn, or pnpm
+- A [Groq API Key](https://console.groq.com/) (free tier available)
+
+## 🚀 Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Ay0u8/FitGenie.git
+   cd FitGenie
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   
+   Create a `.env.local` file in the root directory:
+   ```env
+   GROQ_API_KEY=your_groq_api_key_here
+   ```
+   
+   Get your free API key from [Groq Console](https://console.groq.com/)
+
+4. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Open the app**
+   
+   Navigate to [http://localhost:3000](http://localhost:3000) in your browser
+
+## 📁 Project Structure
+
+```
+FitGenie/
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── chat/          # AI chat endpoint
+│   │   │   └── generate-workout/  # Workout generation endpoint
+│   │   ├── chat/              # Chat page
+│   │   ├── planner/           # Workout planner page
+│   │   ├── layout.tsx         # Root layout
+│   │   ├── page.tsx           # Home page
+│   │   └── globals.css        # Global styles
+│   ├── components/
+│   │   └── ui/                # Reusable UI components
+│   └── lib/
+│       ├── groq.ts            # Groq AI client setup
+│       ├── prompts.ts         # AI prompt templates
+│       └── utils.ts           # Utility functions
+├── public/                    # Static assets
+├── package.json               # Dependencies
+├── requirements.txt           # Installation guide
+└── README.md
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🔧 Available Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run start` | Start production server |
+| `npm run lint` | Run ESLint |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🌐 Pages
 
-## Learn More
+- **/** - Home/Landing page
+- **/planner** - Workout plan generator with body map
+- **/chat** - AI fitness assistant chat
 
-To learn more about Next.js, take a look at the following resources:
+## 🔑 Environment Variables
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `GROQ_API_KEY` | Your Groq API key for AI features | Yes |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📝 Usage
 
-## Deploy on Vercel
+1. Navigate to the **Planner** page
+2. Fill in your training profile:
+   - Select your fitness goal
+   - Choose your experience level
+   - Enter available equipment
+   - Mark any injuries on the interactive body map (click expand for larger view)
+   - Add any preferences
+3. Click **Generate workout plan**
+4. View your personalized AI-generated workout routine
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🤝 Contributing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Contributions are welcome! Feel free to open issues or submit pull requests.
+
+## 📄 License
+
+This project is for educational purposes (Generative AI course - S5).
+
+## 👨‍💻 Author
+
+**Ayoub** - [GitHub](https://github.com/Ay0u8)
+
+---
+
+Made with ❤️ using Next.js and Groq AI
+
