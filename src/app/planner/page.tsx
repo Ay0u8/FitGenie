@@ -14,7 +14,9 @@ import {
   Maximize2,
   Download,
   Printer,
+  FileSpreadsheet,
 } from "lucide-react";
+import { exportWorkoutToExcel } from "@/lib/excelExport";
 
 const goals = ["Build muscle", "Lose fat", "General fitness", "Strength", "Endurance"];
 const levels = ["Beginner", "Intermediate", "Advanced"];
@@ -180,6 +182,17 @@ export default function PlannerPage() {
   </body>
 </html>`);
     printWindow.document.close();
+  };
+
+  const handleDownloadExcel = () => {
+    if (!plan) return;
+
+    const success = exportWorkoutToExcel(plan, planTitle);
+
+    if (!success) {
+      setError("Could not generate Excel file. The workout plan may not contain structured data.");
+      setTimeout(() => setError(null), 5000);
+    }
   };
 
   return (
@@ -443,6 +456,15 @@ export default function PlannerPage() {
                       <Printer className="h-3.5 w-3.5 mr-1.5" />
                       Print / PDF
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadExcel}
+                      className="flex-1 min-w-[140px] h-9 bg-sky-500/10 border-sky-500/30 hover:bg-sky-500/20 text-sky-400 hover:text-sky-300 text-xs"
+                    >
+                      <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5" />
+                      Download Excel
+                    </Button>
                   </div>
                 </div>
               )}
@@ -700,8 +722,8 @@ function BodyMap({
     return (
       <div className="flex flex-col items-center">
         <span className={`text-slate-400 mb-2 uppercase tracking-wider ${size === "large" ? "text-sm" : "text-[10px]"}`}>{label}</span>
-        <svg 
-          viewBox="0 0 206.326 206.326" 
+        <svg
+          viewBox="0 0 206.326 206.326"
           style={{ width: `${svgSize.width}px`, height: 'auto', maxHeight: `${svgSize.maxHeight}px` }}
         >
           <defs>
@@ -720,7 +742,7 @@ function BodyMap({
   return (
     <>
       {/* Expanded Modal View */}
-      <div 
+      <div
         className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-sm transition-all duration-300 ease-out ${
           isExpanded ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
         }`}
@@ -729,7 +751,7 @@ function BodyMap({
           setIsExpanded(false);
         }}
       >
-        <div 
+        <div
           className={`relative w-full max-w-4xl mx-4 p-8 rounded-2xl border border-slate-700 bg-slate-900/95 shadow-2xl transition-all duration-300 ease-out ${
             isExpanded ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
           }`}
@@ -828,7 +850,7 @@ function BodyMap({
       </div>
 
       {/* Compact View */}
-      <div 
+      <div
         className="mt-3 rounded-xl border border-slate-800 bg-slate-950/70 p-4"
         onClick={(e) => e.stopPropagation()}
       >

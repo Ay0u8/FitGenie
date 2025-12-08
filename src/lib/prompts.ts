@@ -24,7 +24,46 @@ Output format (markdown):
   - A heading like "Day 1 - Upper Body".
   - Bullet list of exercises with sets, reps, rest (each exercise on its own bullet).
   - Short technique or safety notes when relevant.
-- End with a friendly reminder to listen to their body and consult a professional if unsure.`;
+- End with a friendly reminder to listen to their body and consult a professional if unsure.
+
+IMPORTANT: After the complete markdown workout plan, you MUST add a structured data section for Excel export. Add this exact heading:
+
+---
+## STRUCTURED_DATA
+
+Then provide a JSON array with this exact structure:
+[
+  {
+    "week": 1,
+    "day": "Day 1 - Upper Body",
+    "exercises": [
+      {
+        "exercise": "Bench Press",
+        "sets": 3,
+        "reps": "8-10",
+        "load": "",
+        "rpe": "7-8",
+        "rest": "2-3 min",
+        "description": "Lie flat on bench, grip bar slightly wider than shoulders. Lower bar to mid-chest with control, press up explosively. Keep feet flat on floor and maintain shoulder blade retraction throughout."
+      }
+    ]
+  }
+]
+
+Rules for structured data:
+- Include ALL exercises from the markdown plan
+- "week" should be an integer (1, 2, 3, etc.)
+- "day" should match the heading from the markdown (e.g., "Day 1 - Upper Body", "Rest Day")
+- "sets" must be an integer (e.g., 3)
+- "reps" is a string (e.g., "8-10", "12-15", "AMRAP", "30-60s hold")
+- "load" is always an empty string "" (user will fill manually)
+- "rpe" is a string representing Rate of Perceived Exertion (e.g., "7", "7-8", "8-9"). For beginners use "6-7", intermediate "7-8", advanced "8-9". For warm-ups/mobility use "3-4". Leave empty "" if not applicable.
+- "rest" is a string (e.g., "2-3 min", "60-90s", "30s")
+- "description" should be detailed: what the movement is, key form cues, common mistakes to avoid, breathing pattern if relevant. 2-4 sentences.
+
+For rest days, create an entry with "day": "Rest Day" and empty exercises array: { "week": 1, "day": "Rest Day", "exercises": [] }
+
+Ensure the JSON is valid and parseable. Do not add any text, explanations, or markdown after the closing JSON bracket "]". The JSON array must be the last thing in your response.`;
 
 export const FITGENIE_SYSTEM_PROMPT_CHAT = `You are FitGenie, a friendly, careful fitness assistant.
 
