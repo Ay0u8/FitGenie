@@ -6,22 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Clipboard, X, Dumbbell, Check, Maximize2, Download, Printer,   FileSpreadsheet,
-} from "lucide-react";
-import { exportWorkoutToExcel, parseStructuredData, type DayData, type ExerciseData } from "@/lib/excelExport";
+import { Clipboard, X, Dumbbell, Check, Maximize2, Download, Printer } from "lucide-react";
 
 const goals = ["Build muscle", "Lose fat", "General fitness", "Strength", "Endurance"];
 const levels = ["Beginner", "Intermediate", "Advanced"];
 
 type ParsedExercise = {
   name: string;
-  sets?: number;
-  reps?: string;
-  load?: string;
-  rpe?: string;
-  rest?: string;
-  description?: string;
-  // Keep details for backward compatibility with markdown parsing
   details?: string;
 };
 
@@ -181,15 +172,7 @@ export default function PlannerPage() {
       const data = await res.json();
       setPlan(data.plan);
       setPlanMeta({ goal, daysPerWeek, programLengthWeeks });
-
-      // Try to parse JSON data first, fallback to markdown parsing
-      const jsonDays = parseJsonToParsedDays(data.plan);
-      if (jsonDays.length > 0) {
-        setParsedDays(jsonDays);
-      } else {
-        // Fallback to markdown parsing if JSON not available
-        setParsedDays(parsePlanByDay(data.plan));
-      }
+      setParsedDays(parsePlanByDay(data.plan));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong";
       setError(message);
@@ -198,34 +181,19 @@ export default function PlannerPage() {
     }
   }
 
-  /**
-   * Strip the STRUCTURED_DATA JSON section from the plan
-   * Returns only the markdown content
-   */
-  const stripStructuredData = (planText: string): string => {
-    // Find and remove everything from ## STRUCTURED_DATA onwards
-    const match = planText.match(/([\s\S]*?)(?:\n\s*##\s*STRUCTURED_DATA[\s\S]*)?$/i);
-    if (match && match[1]) {
-      return match[1].trim();
-    }
-    return planText;
-  };
-
   const handleCopy = () => {
     if (!plan) return;
-    const markdownOnly = stripStructuredData(plan);
-    navigator.clipboard.writeText(markdownOnly).catch(() => null);
+    navigator.clipboard.writeText(plan).catch(() => null);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownloadMarkdown = () => {
     if (!plan) return;
-    const markdownOnly = stripStructuredData(plan);
     const fileName =
       planTitle.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() ||
       "fitgenie-plan";
-    const blob = new Blob([markdownOnly], { type: "text/markdown;charset=utf-8" });
+    const blob = new Blob([plan], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -238,10 +206,9 @@ export default function PlannerPage() {
 
   const handlePrintPlan = () => {
     if (!plan) return;
-    const markdownOnly = stripStructuredData(plan);
     const printWindow = window.open("", "_blank", "width=900,height=700");
     if (!printWindow) return;
-    const htmlContent = markdownToHtml(markdownOnly);
+    const htmlContent = markdownToHtml(plan);
     printWindow.document.write(`<!DOCTYPE html>
 <html>
   <head>
@@ -269,37 +236,26 @@ export default function PlannerPage() {
     printWindow.document.close();
   };
 
-  const handleDownloadExcel = () => {
-    if (!plan || !planMeta) return;
-
-    const success = exportWorkoutToExcel(plan, planTitle, planMeta.programLengthWeeks);
-
-    if (!success) {
-      setError("Could not generate Excel file. The workout plan may not contain structured data.");
-      setTimeout(() => setError(null), 5000);
-    }
-  };
-
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      <div className="pointer-events-none absolute inset-0 dark:opacity-100 opacity-30 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.1),transparent_30%),radial-gradient(circle_at_80%_0%,rgba(129,140,248,0.12),transparent_25%),radial-gradient(circle_at_50%_80%,rgba(16,185,129,0.08),transparent_28%)]" />
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-50">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.1),transparent_30%),radial-gradient(circle_at_80%_0%,rgba(129,140,248,0.12),transparent_25%),radial-gradient(circle_at_50%_80%,rgba(16,185,129,0.08),transparent_28%)]" />
       <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10">
         <header className="space-y-3">
-          <p className="text-xs uppercase tracking-[0.28em] text-primary">Planner</p>
+          <p className="text-xs uppercase tracking-[0.28em] text-sky-300/80">Planner</p>
           <div className="flex flex-col gap-2">
             <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
               FitGenie Workout Planner
             </h1>
-            <p className="max-w-3xl text-sm text-muted-foreground">
+            <p className="max-w-3xl text-sm text-slate-300">
               Tell FitGenie about your goals, schedule, equipment, and any injuries. We&apos;ll build a clear, bullet-point plan you can follow today.
             </p>
           </div>
         </header>
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-          <Card className="bg-card border-border shadow-xl shadow-md">
+          <Card className="bg-slate-900/70 border-slate-800/80 shadow-xl shadow-sky-900/10">
             <CardHeader>
-              <CardTitle className="text-lg font-medium tracking-tight text-foreground">
+              <CardTitle className="text-lg font-medium tracking-tight text-slate-100">
                 Your training profile
               </CardTitle>
             </CardHeader>
@@ -314,10 +270,10 @@ export default function PlannerPage() {
               >
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="flex flex-col gap-1">
-                    <span className="text-xs font-medium text-foreground">Goal</span>
+                    <span className="text-xs font-medium text-slate-200">Goal</span>
                     <select
                       name="goal"
-                      className="h-10 rounded-md border border-input bg-card px-3 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-xs text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
                       defaultValue={goals[0]}
                     >
                       {goals.map((g) => (
@@ -328,10 +284,10 @@ export default function PlannerPage() {
                     </select>
                   </label>
                   <label className="flex flex-col gap-1">
-                    <span className="text-xs font-medium text-foreground">Experience level</span>
+                    <span className="text-xs font-medium text-slate-200">Experience level</span>
                     <select
                       name="experienceLevel"
-                      className="h-10 rounded-md border border-input bg-card px-3 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-xs text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
                       defaultValue={levels[0]}
                     >
                       {levels.map((l) => (
@@ -345,62 +301,62 @@ export default function PlannerPage() {
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="flex flex-col gap-1">
-                    <span className="text-xs font-medium text-foreground">Days per week</span>
+                    <span className="text-xs font-medium text-slate-200">Days per week</span>
                     <Input
                       name="daysPerWeek"
                       type="number"
                       min={1}
                       max={7}
                       defaultValue={3}
-                      className="h-10 border-input bg-card text-xs"
+                      className="h-10 border-slate-700 bg-slate-900 text-xs"
                     />
                   </label>
                   <label className="flex flex-col gap-1">
-                    <span className="text-xs font-medium text-foreground">Time per workout (minutes)</span>
+                    <span className="text-xs font-medium text-slate-200">Time per workout (minutes)</span>
                     <Input
                       name="timePerWorkoutMinutes"
                       type="number"
                       min={20}
                       max={120}
                       defaultValue={45}
-                      className="h-10 border-input bg-card text-xs"
+                      className="h-10 border-slate-700 bg-slate-900 text-xs"
                     />
                   </label>
                 </div>
 
                 <label className="flex flex-col gap-1">
-                  <span className="text-xs font-medium text-foreground">Program length (weeks)</span>
+                  <span className="text-xs font-medium text-slate-200">Program length (weeks)</span>
                   <Input
                     name="programLengthWeeks"
                     type="number"
                     min={1}
                     max={12}
                     defaultValue={4}
-                    className="h-10 border-input bg-card text-xs"
+                    className="h-10 border-slate-700 bg-slate-900 text-xs"
                   />
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-[10px] text-slate-400">
                     FitGenie will explain how to run this plan for the number of weeks you enter.
                   </span>
                 </label>
 
                 <label className="flex flex-col gap-1">
-                  <span className="text-xs font-medium text-foreground">Available equipment</span>
+                  <span className="text-xs font-medium text-slate-200">Available equipment</span>
                   <Input
                     name="equipment"
                     placeholder="e.g. dumbbells, barbell, resistance bands, machines, bodyweight only"
-                    className="h-10 border-input bg-card text-xs"
+                    className="h-10 border-slate-700 bg-slate-900 text-xs"
                   />
-                  <span className="text-[10px] text-muted-foreground">Separate items with commas.</span>
+                  <span className="text-[10px] text-slate-400">Separate items with commas.</span>
                 </label>
 
                 <label className="flex flex-col gap-1">
-                  <span className="text-xs font-medium text-foreground">Injuries / limitations</span>
+                  <span className="text-xs font-medium text-slate-200">Injuries / limitations</span>
                   <Textarea
                     name="injuries"
                     placeholder="e.g. lower back pain, knee issues, shoulder discomfort when pressing"
                     value={injuriesText}
                     onChange={(e) => setInjuriesText(e.target.value)}
-                    className="min-h-[80px] border-input bg-card text-xs"
+                    className="min-h-[80px] border-slate-700 bg-slate-900 text-xs"
                   />
                 </label>
 
@@ -418,15 +374,15 @@ export default function PlannerPage() {
                 </div>
 
                 <label className="flex flex-col gap-1">
-                  <span className="text-xs font-medium text-foreground">Preferences</span>
+                  <span className="text-xs font-medium text-slate-200">Preferences</span>
                   <Textarea
                     name="preferences"
                     placeholder="e.g. prefer push/pull/legs, like machines more than free weights, want short workouts"
-                    className="min-h-[80px] border-input bg-card text-xs"
+                    className="min-h-[80px] border-slate-700 bg-slate-900 text-xs"
                   />
                 </label>
 
-                <p className="mt-1 text-[10px] text-muted-foreground">
+                <p className="mt-1 text-[10px] text-slate-400">
                   This is general fitness information, not medical advice. If you have health conditions,
                   talk to a doctor before starting any program.
                 </p>
@@ -434,7 +390,7 @@ export default function PlannerPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="mt-2 h-10 bg-primary text-xs font-semibold text-primary-foreground shadow-lg shadow-md hover:bg-primary/90 disabled:cursor-not-allowed"
+                  className="mt-2 h-10 bg-sky-500 text-xs font-semibold text-slate-950 shadow-lg shadow-sky-900/20 hover:bg-sky-400 disabled:cursor-not-allowed"
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">
@@ -446,27 +402,27 @@ export default function PlannerPage() {
                   )}
                 </Button>
 
-                {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
+                {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
               </form>
             </CardContent>
           </Card>
 
-          <Card className="bg-card border-border shadow-xl shadow-md">
+          <Card className="bg-slate-900/70 border-slate-800/80 shadow-xl shadow-sky-900/10">
             <CardHeader>
-              <CardTitle className="text-lg font-medium tracking-tight text-foreground">
+              <CardTitle className="text-lg font-medium tracking-tight text-slate-100">
                 Your FitGenie plan
               </CardTitle>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-400">
                 Submit your profile to see a structured weekly plan with days, exercises, sets, reps, rest, and notes.
               </p>
             </CardHeader>
             <CardContent className="text-sm leading-relaxed">
               {!plan && !loading && (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="mb-4 rounded-full bg-muted p-4">
-                    <Dumbbell className="h-8 w-8 text-foreground0" />
+                  <div className="mb-4 rounded-full bg-slate-800/50 p-4">
+                    <Dumbbell className="h-8 w-8 text-slate-500" />
                   </div>
-                  <p className="text-sm text-muted-foreground max-w-xs">
+                  <p className="text-sm text-slate-400 max-w-xs">
                     Fill out your training profile and generate a personalized workout plan
                   </p>
                 </div>
@@ -476,7 +432,7 @@ export default function PlannerPage() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
-                    <p className="text-sm text-muted-foreground">Generating your plan...</p>
+                    <p className="text-sm text-slate-300">Generating your plan...</p>
                   </div>
                   <LoadingPlanSkeleton />
                 </div>
@@ -484,25 +440,25 @@ export default function PlannerPage() {
 
               {plan && !loading && (
                 <div className="space-y-4">
-                  <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+                  <div className="rounded-xl border border-slate-700/50 bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-4">
+                    <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">
                       Generated Plan Card
                     </p>
-                    <h3 className="text-xl font-bold text-foreground mb-4">{planTitle}</h3>
+                    <h3 className="text-xl font-bold text-white mb-4">{planTitle}</h3>
 
                     <div className="space-y-2">
-                      <p className="text-xs font-medium text-muted-foreground">Weekly breakdown</p>
+                      <p className="text-xs font-medium text-slate-300">Weekly breakdown</p>
                       {parsedDays.length > 0 ? (
                         <div className="max-h-[480px] overflow-y-auto space-y-3 pr-1 custom-scrollbar">
-                          {parsedDays.map((day, index) => (
-                            <DaySection key={`${day.title}-${index}`} day={day} onViewExercise={handleExerciseDemo} />
+                          {parsedDays.map((day) => (
+                            <DaySection key={day.title} day={day} onViewExercise={handleExerciseDemo} />
                           ))}
                         </div>
                       ) : (
-                        <div className="text-xs text-muted-foreground py-2 max-h-[400px] overflow-y-auto custom-scrollbar">
+                        <div className="text-xs text-slate-400 py-2 max-h-[400px] overflow-y-auto custom-scrollbar">
                           <div
                             dangerouslySetInnerHTML={{ __html: markdownToHtml(plan) }}
-                            className="prose dark:prose-invert prose-xs max-w-none"
+                            className="prose prose-invert prose-xs max-w-none"
                           />
                         </div>
                       )}
@@ -514,7 +470,7 @@ export default function PlannerPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleCopy}
-                      className="flex-1 min-w-[140px] h-9 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 text-xs"
+                      className="flex-1 min-w-[140px] h-9 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 text-xs"
                     >
                       {copied ? (
                         <Check className="h-3.5 w-3.5 mr-1.5" />
@@ -527,7 +483,7 @@ export default function PlannerPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleDownloadMarkdown}
-                      className="flex-1 min-w-[140px] h-9 border-input text-foreground hover:bg-accent hover:text-foreground text-xs"
+                      className="flex-1 min-w-[140px] h-9 border-slate-600/60 text-slate-200 hover:text-white text-xs"
                     >
                       <Download className="h-3.5 w-3.5 mr-1.5" />
                       Download .md
@@ -536,19 +492,10 @@ export default function PlannerPage() {
                       variant="outline"
                       size="sm"
                       onClick={handlePrintPlan}
-                      className="flex-1 min-w-[140px] h-9 border-input text-foreground hover:bg-accent hover:text-foreground text-xs"
+                      className="flex-1 min-w-[140px] h-9 border-slate-600/60 text-slate-200 hover:text-white text-xs"
                     >
                       <Printer className="h-3.5 w-3.5 mr-1.5" />
                       Print / PDF
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleDownloadExcel}
-                      className="flex-1 min-w-[140px] h-9 bg-sky-500/10 border-sky-500/30 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 text-xs"
-                    >
-                      <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5" />
-                      Download Excel
                     </Button>
                   </div>
                 </div>
@@ -589,50 +536,6 @@ function markdownToHtml(markdown: string): string {
   }
 
   return html;
-}
-
-/**
- * Convert JSON structured data to ParsedDay format for frontend display
- * Only displays the first week since all weeks are the same
- */
-function parseJsonToParsedDays(planText: string): ParsedDay[] {
-  try {
-    const jsonData = parseStructuredData(planText);
-    if (!jsonData || jsonData.length === 0) {
-      return [];
-    }
-
-    const parsedDays: ParsedDay[] = [];
-
-    // Only process days from week 1 to avoid duplicates
-    const firstWeekDays = jsonData.filter((dayData: DayData) => dayData.week === 1);
-
-    firstWeekDays.forEach((dayData: DayData) => {
-      const dayTitle = `Day ${dayData.day}`;
-
-      const exercises: ParsedExercise[] = dayData.exercises.map((ex: ExerciseData) => {
-        return {
-          name: ex.exercise,
-          sets: ex.sets,
-          reps: ex.reps,
-          load: ex.load,
-          rpe: ex.rpe,
-          rest: ex.rest,
-          description: ex.description,
-        };
-      });
-
-      parsedDays.push({
-        title: dayTitle,
-        exercises,
-      });
-    });
-
-    return parsedDays;
-  } catch (error) {
-    console.error("Failed to parse JSON structured data:", error);
-    return [];
-  }
 }
 
 function parsePlanByDay(plan: string): ParsedDay[] {
@@ -703,10 +606,10 @@ function DaySection({
   onViewExercise: (exercise: ParsedExercise) => void;
 }) {
   return (
-    <section className="rounded-lg border border-border bg-card/80 p-3 space-y-3">
+    <section className="rounded-lg border border-slate-700/40 bg-slate-900/50 p-3 space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-foreground">{day.title}</p>
-        <span className="text-[11px] text-foreground0">{day.exercises.length} exercise(s)</span>
+        <p className="text-sm font-semibold text-slate-100">{day.title}</p>
+        <span className="text-[11px] text-slate-500">{day.exercises.length} exercise(s)</span>
       </div>
       {day.exercises.length > 0 ? (
         <div className="space-y-2">
@@ -719,7 +622,7 @@ function DaySection({
           ))}
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">No exercise details provided for this day.</p>
+        <p className="text-xs text-slate-400">No exercise details provided for this day.</p>
       )}
     </section>
   );
@@ -732,72 +635,21 @@ function ExerciseCard({
   exercise: ParsedExercise;
   onViewExercise: (exercise: ParsedExercise) => void;
 }) {
-  // Check if we have structured data or just details string
-  const hasStructuredData = exercise.sets || exercise.reps || exercise.load || exercise.rpe || exercise.rest;
-
   return (
-    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border hover:border-sky-500/50 transition-all group">
-      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center border border-border">
-        <Dumbbell className="h-4 w-4 text-sky-500 dark:text-sky-400" />
+    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-slate-800/40 border border-slate-700/30 hover:border-sky-500/30 transition-all group">
+      <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center overflow-hidden">
+        <Dumbbell className="h-5 w-5 text-sky-400/70" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground mb-1.5">{exercise.name}</p>
-
-        {hasStructuredData ? (
-          <div className="space-y-1">
-            {/* Primary workout metrics */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-              {exercise.sets && (
-                <span className="text-muted-foreground">
-                  <span className="font-medium text-sky-600 dark:text-sky-400">{exercise.sets}</span> sets
-                </span>
-              )}
-              {exercise.reps && (
-                <span className="text-muted-foreground">
-                  <span className="font-medium text-emerald-600 dark:text-emerald-400">{exercise.reps}</span> reps
-                </span>
-              )}
-              {exercise.load && (
-                <span className="text-muted-foreground">
-                  <span className="font-medium text-foreground">{exercise.load}</span>
-                </span>
-              )}
-            </div>
-
-            {/* Secondary metrics */}
-            {(exercise.rpe || exercise.rest) && (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                {exercise.rpe && (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
-                    <span className="text-[10px] font-medium">RPE</span>
-                    <span className="font-semibold">{exercise.rpe}</span>
-                  </span>
-                )}
-                {exercise.rest && (
-                  <span className="text-muted-foreground">
-                    Rest: <span className="text-foreground/80">{exercise.rest}</span>
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* Description/notes */}
-            {exercise.description && (
-              <p className="text-xs text-muted-foreground leading-relaxed pt-0.5">
-                {exercise.description}
-              </p>
-            )}
-          </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            {exercise.details || "Open demo to see sets, reps, and cues"}
-          </p>
-        )}
+        <p className="text-sm font-medium text-slate-100 truncate">{exercise.name}</p>
+        <p className="text-xs text-slate-400">
+          {exercise.details || "Open demo to see sets, reps, and cues"}
+        </p>
       </div>
       <button
         type="button"
         onClick={() => onViewExercise(exercise)}
-        className="inline-flex items-center gap-1 rounded-md border border-input px-2 py-1 text-[11px] text-foreground hover:border-sky-500 hover:text-sky-600 dark:hover:text-sky-400 transition"
+        className="inline-flex items-center gap-1 rounded-md border border-slate-600/60 px-2 py-1 text-[11px] text-slate-200 hover:border-sky-500 hover:text-white transition"
       >
         <Maximize2 className="h-3.5 w-3.5" />
         View demo
@@ -934,9 +786,9 @@ function BodyMap({
     const svgSize = size === "large" ? { width: 280, maxHeight: 480 } : { width: 120, maxHeight: 200 };
     return (
       <div className="flex flex-col items-center">
-        <span className={`text-muted-foreground mb-2 uppercase tracking-wider ${size === "large" ? "text-sm" : "text-[10px]"}`}>{label}</span>
-        <svg
-          viewBox="0 0 206.326 206.326"
+        <span className={`text-slate-400 mb-2 uppercase tracking-wider ${size === "large" ? "text-sm" : "text-[10px]"}`}>{label}</span>
+        <svg 
+          viewBox="0 0 206.326 206.326" 
           style={{ width: `${svgSize.width}px`, height: 'auto', maxHeight: `${svgSize.maxHeight}px` }}
         >
           <defs>
@@ -955,8 +807,8 @@ function BodyMap({
   return (
     <>
       {/* Expanded Modal View */}
-      <div
-        className={`fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm transition-all duration-300 ease-out ${
+      <div 
+        className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-sm transition-all duration-300 ease-out ${
           isExpanded ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
         }`}
         onClick={(e) => {
@@ -964,8 +816,8 @@ function BodyMap({
           setIsExpanded(false);
         }}
       >
-        <div
-          className={`relative w-full max-w-4xl mx-4 p-8 rounded-2xl border border-input bg-card/95 shadow-2xl transition-all duration-300 ease-out ${
+        <div 
+          className={`relative w-full max-w-4xl mx-4 p-8 rounded-2xl border border-slate-700 bg-slate-900/95 shadow-2xl transition-all duration-300 ease-out ${
             isExpanded ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
           }`}
           onClick={(e) => e.stopPropagation()}
@@ -978,7 +830,7 @@ function BodyMap({
                 e.stopPropagation();
                 setIsExpanded(false);
               }}
-              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-muted hover:bg-slate-700 text-muted-foreground hover:text-white transition-colors"
+              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -986,7 +838,7 @@ function BodyMap({
             {/* Header */}
             <div className="text-center mb-6">
               <h3 className="text-xl font-semibold text-white mb-1">Body Map</h3>
-              <p className="text-sm text-primary">Click on body areas to tag discomfort or injuries</p>
+              <p className="text-sm text-sky-400">Click on body areas to tag discomfort or injuries</p>
               {/* Select All / Clear All buttons */}
               <div className="flex justify-center gap-3 mt-4">
                 <button
@@ -996,7 +848,7 @@ function BodyMap({
                     e.stopPropagation();
                     onSelectAll(allMuscleKeys);
                   }}
-                  className="px-4 py-1.5 text-xs rounded-lg border border-slate-600 bg-muted hover:bg-slate-700 text-muted-foreground hover:text-white transition-colors"
+                  className="px-4 py-1.5 text-xs rounded-lg border border-slate-600 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
                 >
                   Select All
                 </button>
@@ -1008,7 +860,7 @@ function BodyMap({
                     onClearAll();
                   }}
                   disabled={selected.length === 0}
-                  className="px-4 py-1.5 text-xs rounded-lg border border-slate-600 bg-muted hover:bg-slate-700 text-muted-foreground hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-4 py-1.5 text-xs rounded-lg border border-slate-600 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Clear All
                 </button>
@@ -1023,8 +875,8 @@ function BodyMap({
 
             {/* Selected areas in modal */}
             {selected.length > 0 && (
-              <div className="mt-8 pt-6 border-t border-input">
-                <p className="text-xs text-muted-foreground mb-3 text-center">Selected areas ({selected.length})</p>
+              <div className="mt-8 pt-6 border-t border-slate-700">
+                <p className="text-xs text-slate-400 mb-3 text-center">Selected areas ({selected.length})</p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   {selected.map((area) => (
                     <button
@@ -1054,7 +906,7 @@ function BodyMap({
                 e.stopPropagation();
                 setIsExpanded(false);
               }}
-              className="px-6 py-2 rounded-lg bg-sky-600 hover:bg-primary text-white font-medium transition-colors"
+              className="px-6 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-medium transition-colors"
             >
               Done
             </button>
@@ -1063,12 +915,12 @@ function BodyMap({
       </div>
 
       {/* Compact View */}
-      <div
-        className="mt-3 rounded-xl border border-border bg-background/70 p-4"
+      <div 
+        className="mt-3 rounded-xl border border-slate-800 bg-slate-950/70 p-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-foreground">Body Map</p>
+          <p className="text-xs font-semibold text-slate-200">Body Map</p>
           <div className="flex items-center gap-3">
             {/* Expand button */}
             <button
@@ -1078,12 +930,12 @@ function BodyMap({
                 e.stopPropagation();
                 setIsExpanded(true);
               }}
-              className="flex items-center justify-center w-7 h-7 rounded-md bg-muted/60 hover:bg-slate-700 text-muted-foreground hover:text-white transition-all duration-200 hover:scale-110"
+              className="flex items-center justify-center w-7 h-7 rounded-md bg-slate-800/60 hover:bg-slate-700 text-slate-400 hover:text-white transition-all duration-200 hover:scale-110"
               title="Expand body map"
             >
               <Maximize2 className="w-4 h-4" />
             </button>
-            <span className="text-[10px] text-primary">Click areas to tag discomfort</span>
+            <span className="text-[10px] text-sky-400">Click areas to tag discomfort</span>
           </div>
         </div>
 
@@ -1150,7 +1002,7 @@ function ExerciseModal({
   const renderMedia = () => {
     if (!media?.media) {
       return (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-slate-400">
           Wger did not return demo media for this exercise. Step-by-step cues are shown above.
         </p>
       );
@@ -1159,12 +1011,12 @@ function ExerciseModal({
     if (media.media.type === "video") {
       return (
         <div className="space-y-2">
-          <p className="text-xs font-medium text-primary uppercase tracking-wide">Video demos</p>
+          <p className="text-xs font-medium text-sky-400 uppercase tracking-wide">Video demos</p>
           <div className="grid gap-3 md:grid-cols-2">
             {media.media.assets.map((asset) => (
               <div
                 key={asset.id}
-                className="overflow-hidden rounded-lg border border-border bg-card"
+                className="overflow-hidden rounded-lg border border-slate-700/60 bg-slate-900/80"
               >
                 <video
                   controls
@@ -1177,7 +1029,7 @@ function ExerciseModal({
                   Your browser does not support embedded videos.
                 </video>
                 {asset.isMain && (
-                  <p className="px-3 py-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <p className="px-3 py-2 text-[11px] uppercase tracking-wide text-slate-400">
                     Primary demo
                   </p>
                 )}
@@ -1190,12 +1042,12 @@ function ExerciseModal({
 
     return (
       <div className="space-y-2">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Image references</p>
+        <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Image references</p>
         <div className="grid gap-3 md:grid-cols-2">
           {media.media.assets.map((asset) => (
             <div
               key={asset.id}
-              className="overflow-hidden rounded-lg border border-border bg-card"
+              className="overflow-hidden rounded-lg border border-slate-700/60 bg-slate-900/80"
             >
               <Image
                 src={asset.url}
@@ -1206,7 +1058,7 @@ function ExerciseModal({
                 loading="lazy"
               />
               {asset.isMain && (
-                <p className="px-3 py-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+                <p className="px-3 py-2 text-[11px] uppercase tracking-wide text-slate-400">
                   Primary angle
                 </p>
               )}
@@ -1218,107 +1070,42 @@ function ExerciseModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm px-4 py-6">
-      <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6">
+      <div className="relative w-full max-w-2xl rounded-2xl border border-slate-700/60 bg-slate-900/95 p-5 shadow-2xl">
         <button
           type="button"
-          className="absolute right-5 top-5 rounded-full border border-border p-1.5 text-muted-foreground hover:text-foreground hover:border-sky-500/50 transition-colors"
+          className="absolute right-4 top-4 rounded-full border border-slate-700/70 p-1 text-slate-400 hover:text-white"
           onClick={onClose}
         >
           <X className="h-4 w-4" />
         </button>
-
-        <div className="space-y-5 pr-8">
-          {/* Header */}
+        <div className="space-y-3 pr-6">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-1">Exercise Details</p>
-            <h2 className="text-2xl font-semibold text-foreground mb-3">{exercise.name}</h2>
-
-            {/* Workout Parameters - Show if structured data exists */}
-            {(exercise.sets || exercise.reps || exercise.load || exercise.rpe || exercise.rest) && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 p-4 rounded-lg bg-muted/50 border border-border">
-                {exercise.sets && (
-                  <div className="space-y-1">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Sets</p>
-                    <p className="text-xl font-bold text-sky-600 dark:text-sky-400">{exercise.sets}</p>
-                  </div>
-                )}
-                {exercise.reps && (
-                  <div className="space-y-1">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Reps</p>
-                    <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{exercise.reps}</p>
-                  </div>
-                )}
-                {exercise.load && (
-                  <div className="space-y-1">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Load</p>
-                    <p className="text-base font-semibold text-foreground">{exercise.load}</p>
-                  </div>
-                )}
-                {exercise.rpe && (
-                  <div className="space-y-1">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">RPE</p>
-                    <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-orange-500/15 border border-orange-500/30">
-                      <span className="text-base font-bold text-orange-600 dark:text-orange-400">{exercise.rpe}</span>
-                      <span className="text-[10px] text-orange-500/70">/10</span>
-                    </div>
-                  </div>
-                )}
-                {exercise.rest && (
-                  <div className="space-y-1">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Rest</p>
-                    <p className="text-sm font-medium text-foreground">{exercise.rest}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Exercise Description/Notes */}
-            {exercise.description && (
-              <div className="mt-3 p-3 rounded-lg bg-muted/30 border border-border">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Form Cues & Notes</p>
-                <p className="text-sm text-foreground/90 leading-relaxed">{exercise.description}</p>
-              </div>
-            )}
+            <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Exercise demo</p>
+            <h2 className="text-2xl font-semibold text-white">{exercise.name}</h2>
           </div>
-
-          {/* Loading State */}
           {loading && (
-            <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 rounded-md border border-slate-700/60 bg-slate-900/80 p-3 text-sm text-slate-300">
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
               Fetching demo from Wger...
             </div>
           )}
-
-          {/* Error State */}
           {error && (
-            <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
-              <p className="text-sm text-destructive">
-                {error} <span className="text-muted-foreground">(try searching manually in your app)</span>
-              </p>
-            </div>
+            <p className="text-sm text-red-400">
+              {error} <span className="text-slate-400">(try searching manually in your app)</span>
+            </p>
           )}
-
-          {/* Media Content */}
           {!loading && !error && media && (
-            <div className="space-y-4">
-              {media.description && (
-                <div className="p-3 rounded-lg bg-sky-500/5 border border-sky-500/20">
-                  <p className="text-[10px] uppercase tracking-wider text-sky-600 dark:text-sky-400 mb-1.5">Exercise Description</p>
-                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{media.description}</p>
-                </div>
-              )}
+            <div className="space-y-3">
+              <p className="text-sm text-slate-200 whitespace-pre-line">{media.description}</p>
               {renderMedia()}
             </div>
           )}
-
-          {/* No Media State */}
           {!loading && !error && !media && (
-            <div className="rounded-lg border border-border bg-muted/20 p-4 text-center">
-              <p className="text-sm text-muted-foreground">
-                No Wger entry was found for this exercise. The workout parameters and form cues are shown above.
-              </p>
-            </div>
+            <p className="text-sm text-slate-400">
+              No Wger entry was found for this exercise. Try using another exercise name or view the
+              full plan text.
+            </p>
           )}
         </div>
       </div>
