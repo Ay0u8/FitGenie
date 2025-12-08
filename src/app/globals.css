@@ -126,17 +126,17 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(30, 41, 59, 0.5);
+  @apply bg-muted/50;
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(56, 189, 248, 0.3);
+  @apply bg-primary/30;
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.5);
+  @apply bg-primary/50;
 }
 
 /* Pulse animation for body highlights */
