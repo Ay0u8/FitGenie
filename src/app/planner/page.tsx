@@ -206,6 +206,8 @@ export default function PlannerPage() {
                         prev.includes(area) ? prev.filter((a) => a !== area) : [...prev, area]
                       )
                     }
+                    onClearAll={() => setSelectedAreas([])}
+                    onSelectAll={(areas) => setSelectedAreas(areas)}
                   />
                   {selectedAreas.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-sky-200">
@@ -412,57 +414,65 @@ function ExerciseCard({ exercise }: { exercise: ParsedExercise }) {
 function BodyMap({
   selected,
   onToggle,
+  onClearAll,
+  onSelectAll,
 }: {
   selected: string[];
   onToggle: (area: string) => void;
+  onClearAll: () => void;
+  onSelectAll: (areas: string[]) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Front body hotspots - aligned to body silhouette (centered at x=103)
+  // Front body hotspots - aligned to body silhouette (viewBox 0 0 206.326 206.326)
+  // Body center x=103, torso ends ~y=118, legs split below that
   const frontHotspots = [
     { key: "Head", cx: 103, cy: 8, r: 4 },
-    { key: "Neck", cx: 103, cy: 20, r: 3 },
-    { key: "Left shoulder", cx: 85, cy: 30, r: 3.5 },
-    { key: "Right shoulder", cx: 121, cy: 30, r: 3.5 },
-    { key: "Chest", cx: 103, cy: 40, r: 5 },
-    { key: "Left bicep", cx: 77, cy: 50, r: 3 },
-    { key: "Right bicep", cx: 129, cy: 50, r: 3 },
-    { key: "Abs", cx: 103, cy: 58, r: 4.5 },
-    { key: "Left forearm", cx: 68, cy: 68, r: 3 },
-    { key: "Right forearm", cx: 138, cy: 68, r: 3 },
-    { key: "Left hip", cx: 95, cy: 78, r: 3 },
-    { key: "Right hip", cx: 111, cy: 78, r: 3 },
-    { key: "Left quad", cx: 95, cy: 100, r: 4 },
-    { key: "Right quad", cx: 111, cy: 100, r: 4 },
-    { key: "Left knee", cx: 95, cy: 125, r: 3 },
-    { key: "Right knee", cx: 111, cy: 125, r: 3 },
-    { key: "Left shin", cx: 94, cy: 150, r: 3 },
-    { key: "Right shin", cx: 112, cy: 150, r: 3 },
-    { key: "Left ankle", cx: 93, cy: 175, r: 2.5 },
-    { key: "Right ankle", cx: 113, cy: 175, r: 2.5 },
+    { key: "Neck", cx: 103, cy: 25, r: 3 },
+    { key: "Left shoulder", cx: 83, cy: 35, r: 3.5 },
+    { key: "Right shoulder", cx: 123, cy: 35, r: 3.5 },
+    { key: "Chest", cx: 103, cy: 48, r: 5 },
+    { key: "Left bicep", cx: 78, cy: 55, r: 3 },
+    { key: "Right bicep", cx: 128, cy: 55, r: 3 },
+    { key: "Abs", cx: 103, cy: 70, r: 4.5 },
+    { key: "Left forearm", cx: 72, cy: 78, r: 3 },
+    { key: "Right forearm", cx: 134, cy: 78, r: 3 },
+    { key: "Left hip", cx: 97, cy: 90, r: 3 },
+    { key: "Right hip", cx: 109, cy: 90, r: 3 },
+    { key: "Left quad", cx: 96, cy: 130, r: 4 },
+    { key: "Right quad", cx: 110, cy: 130, r: 4 },
+    { key: "Left knee", cx: 95, cy: 152, r: 3 },
+    { key: "Right knee", cx: 111, cy: 152, r: 3 },
+    { key: "Left shin", cx: 94, cy: 172, r: 3 },
+    { key: "Right shin", cx: 112, cy: 172, r: 3 },
+    { key: "Left ankle", cx: 94, cy: 190, r: 2.5 },
+    { key: "Right ankle", cx: 112, cy: 190, r: 2.5 },
   ];
 
-  // Back body hotspots - aligned to body silhouette (centered at x=103)
+  // Back body hotspots - aligned to body silhouette (viewBox 0 0 206.326 206.326)
   const backHotspots = [
     { key: "Head (back)", cx: 103, cy: 8, r: 4 },
-    { key: "Neck (back)", cx: 103, cy: 20, r: 3 },
-    { key: "Left trap", cx: 92, cy: 28, r: 3 },
-    { key: "Right trap", cx: 114, cy: 28, r: 3 },
-    { key: "Upper back", cx: 103, cy: 38, r: 5 },
-    { key: "Left rear delt", cx: 85, cy: 30, r: 3 },
-    { key: "Right rear delt", cx: 121, cy: 30, r: 3 },
-    { key: "Left tricep", cx: 77, cy: 50, r: 3 },
-    { key: "Right tricep", cx: 129, cy: 50, r: 3 },
-    { key: "Mid back", cx: 103, cy: 52, r: 4 },
-    { key: "Lower back", cx: 103, cy: 68, r: 4.5 },
-    { key: "Glutes", cx: 103, cy: 82, r: 5 },
-    { key: "Left hamstring", cx: 95, cy: 100, r: 4 },
-    { key: "Right hamstring", cx: 111, cy: 100, r: 4 },
-    { key: "Left calf", cx: 94, cy: 150, r: 3.5 },
-    { key: "Right calf", cx: 112, cy: 150, r: 3.5 },
-    { key: "Left Achilles", cx: 93, cy: 175, r: 2.5 },
-    { key: "Right Achilles", cx: 113, cy: 175, r: 2.5 },
+    { key: "Neck (back)", cx: 103, cy: 25, r: 3 },
+    { key: "Left trap", cx: 93, cy: 32, r: 3 },
+    { key: "Right trap", cx: 113, cy: 32, r: 3 },
+    { key: "Upper back", cx: 103, cy: 45, r: 5 },
+    { key: "Left rear delt", cx: 83, cy: 38, r: 3 },
+    { key: "Right rear delt", cx: 123, cy: 38, r: 3 },
+    { key: "Left tricep", cx: 78, cy: 55, r: 3 },
+    { key: "Right tricep", cx: 128, cy: 55, r: 3 },
+    { key: "Mid back", cx: 103, cy: 60, r: 4 },
+    { key: "Lower back", cx: 103, cy: 78, r: 4.5 },
+    { key: "Glutes", cx: 103, cy: 100, r: 5 },
+    { key: "Left hamstring", cx: 96, cy: 130, r: 4 },
+    { key: "Right hamstring", cx: 110, cy: 130, r: 4 },
+    { key: "Left calf", cx: 94, cy: 172, r: 3.5 },
+    { key: "Right calf", cx: 112, cy: 172, r: 3.5 },
+    { key: "Left Achilles", cx: 94, cy: 190, r: 2.5 },
+    { key: "Right Achilles", cx: 112, cy: 190, r: 2.5 },
   ];
+
+  // Get all muscle keys for select all
+  const allMuscleKeys = [...frontHotspots, ...backHotspots].map(h => h.key);
 
   const isSelected = (key: string) => selected.includes(key);
 
@@ -570,6 +580,32 @@ function BodyMap({
             <div className="text-center mb-6">
               <h3 className="text-xl font-semibold text-white mb-1">Body Map</h3>
               <p className="text-sm text-sky-400">Click on body areas to tag discomfort or injuries</p>
+              {/* Select All / Clear All buttons */}
+              <div className="flex justify-center gap-3 mt-4">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onSelectAll(allMuscleKeys);
+                  }}
+                  className="px-4 py-1.5 text-xs rounded-lg border border-slate-600 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                >
+                  Select All
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onClearAll();
+                  }}
+                  disabled={selected.length === 0}
+                  className="px-4 py-1.5 text-xs rounded-lg border border-slate-600 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Clear All
+                </button>
+              </div>
             </div>
 
             {/* Large Body Views */}
