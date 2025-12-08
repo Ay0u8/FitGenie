@@ -2,6 +2,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
+import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,30 +27,37 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark bg-slate-950">
+    <html lang="en" suppressHydrationWarning>
       <body
-        suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-slate-950 text-slate-50 antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground antialiased`}
       >
-        <div className="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
-          <nav className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3 text-sm">
-            <Link href="/" className="font-semibold tracking-tight">
-              FitGenie
-            </Link>
-            <div className="flex items-center gap-4 text-xs text-slate-300">
-              <Link
-                href="/planner"
-                className="transition hover:text-sky-400"
-              >
-                Planner
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <div className="border-b border-border bg-background/80 backdrop-blur">
+            <nav className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3 text-sm">
+              <Link href="/" className="font-semibold tracking-tight">
+                FitGenie
               </Link>
-              <Link href="/chat" className="transition hover:text-sky-400">
-                Chat
-              </Link>
-            </div>
-          </nav>
-        </div>
-        {children}
+              <div className="flex items-center gap-4 text-xs">
+                <Link
+                  href="/planner"
+                  className="transition hover:text-primary"
+                >
+                  Planner
+                </Link>
+                <Link href="/chat" className="transition hover:text-primary">
+                  Chat
+                </Link>
+                <ThemeToggle />
+              </div>
+            </nav>
+          </div>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
