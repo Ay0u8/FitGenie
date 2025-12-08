@@ -16,13 +16,20 @@ import {
   Printer,
   FileSpreadsheet,
 } from "lucide-react";
-import { exportWorkoutToExcel } from "@/lib/excelExport";
+import { exportWorkoutToExcel, parseStructuredData, type DayData, type ExerciseData } from "@/lib/excelExport";
 
 const goals = ["Build muscle", "Lose fat", "General fitness", "Strength", "Endurance"];
 const levels = ["Beginner", "Intermediate", "Advanced"];
 
 type ParsedExercise = {
   name: string;
+  sets?: number;
+  reps?: string;
+  load?: string;
+  rpe?: string;
+  rest?: string;
+  description?: string;
+  // Keep details for backward compatibility with markdown parsing
   details?: string;
 };
 
@@ -120,7 +127,15 @@ export default function PlannerPage() {
       const data = await res.json();
       setPlan(data.plan);
       setPlanMeta({ goal, daysPerWeek, programLengthWeeks });
-      setParsedDays(parsePlanByDay(data.plan));
+
+      // Try to parse JSON data first, fallback to markdown parsing
+      const jsonDays = parseJsonToParsedDays(data.plan);
+      if (jsonDays.length > 0) {
+        setParsedDays(jsonDays);
+      } else {
+        // Fallback to markdown parsing if JSON not available
+        setParsedDays(parsePlanByDay(data.plan));
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong";
       setError(message);
@@ -129,19 +144,34 @@ export default function PlannerPage() {
     }
   }
 
+  /**
+   * Strip the STRUCTURED_DATA JSON section from the plan
+   * Returns only the markdown content
+   */
+  const stripStructuredData = (planText: string): string => {
+    // Find and remove everything from ## STRUCTURED_DATA onwards
+    const match = planText.match(/([\s\S]*?)(?:\n\s*##\s*STRUCTURED_DATA[\s\S]*)?$/i);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+    return planText;
+  };
+
   const handleCopy = () => {
     if (!plan) return;
-    navigator.clipboard.writeText(plan).catch(() => null);
+    const markdownOnly = stripStructuredData(plan);
+    navigator.clipboard.writeText(markdownOnly).catch(() => null);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownloadMarkdown = () => {
     if (!plan) return;
+    const markdownOnly = stripStructuredData(plan);
     const fileName =
       planTitle.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() ||
       "fitgenie-plan";
-    const blob = new Blob([plan], { type: "text/markdown;charset=utf-8" });
+    const blob = new Blob([markdownOnly], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -154,9 +184,10 @@ export default function PlannerPage() {
 
   const handlePrintPlan = () => {
     if (!plan) return;
+    const markdownOnly = stripStructuredData(plan);
     const printWindow = window.open("", "_blank", "width=900,height=700");
     if (!printWindow) return;
-    const htmlContent = markdownToHtml(plan);
+    const htmlContent = markdownToHtml(markdownOnly);
     printWindow.document.write(`<!DOCTYPE html>
 <html>
   <head>
@@ -185,9 +216,9 @@ export default function PlannerPage() {
   };
 
   const handleDownloadExcel = () => {
-    if (!plan) return;
+    if (!plan || !planMeta) return;
 
-    const success = exportWorkoutToExcel(plan, planTitle);
+    const success = exportWorkoutToExcel(plan, planTitle, planMeta.programLengthWeeks);
 
     if (!success) {
       setError("Could not generate Excel file. The workout plan may not contain structured data.");
@@ -409,8 +440,8 @@ export default function PlannerPage() {
                       <p className="text-xs font-medium text-slate-300">Weekly breakdown</p>
                       {parsedDays.length > 0 ? (
                         <div className="max-h-[480px] overflow-y-auto space-y-3 pr-1 custom-scrollbar">
-                          {parsedDays.map((day) => (
-                            <DaySection key={day.title} day={day} />
+                          {parsedDays.map((day, index) => (
+                            <DaySection key={`${day.title}-${index}`} day={day} />
                           ))}
                         </div>
                       ) : (
@@ -497,6 +528,50 @@ function markdownToHtml(markdown: string): string {
   return html;
 }
 
+/**
+ * Convert JSON structured data to ParsedDay format for frontend display
+ * Only displays the first week since all weeks are the same
+ */
+function parseJsonToParsedDays(planText: string): ParsedDay[] {
+  try {
+    const jsonData = parseStructuredData(planText);
+    if (!jsonData || jsonData.length === 0) {
+      return [];
+    }
+
+    const parsedDays: ParsedDay[] = [];
+
+    // Only process days from week 1 to avoid duplicates
+    const firstWeekDays = jsonData.filter((dayData: DayData) => dayData.week === 1);
+
+    firstWeekDays.forEach((dayData: DayData) => {
+      const dayTitle = `Day ${dayData.day}`;
+
+      const exercises: ParsedExercise[] = dayData.exercises.map((ex: ExerciseData) => {
+        return {
+          name: ex.exercise,
+          sets: ex.sets,
+          reps: ex.reps,
+          load: ex.load,
+          rpe: ex.rpe,
+          rest: ex.rest,
+          description: ex.description,
+        };
+      });
+
+      parsedDays.push({
+        title: dayTitle,
+        exercises,
+      });
+    });
+
+    return parsedDays;
+  } catch (error) {
+    console.error("Failed to parse JSON structured data:", error);
+    return [];
+  }
+}
+
 function parsePlanByDay(plan: string): ParsedDay[] {
   const lines = plan.split("\n");
   const days: ParsedDay[] = [];
@@ -578,18 +653,69 @@ function DaySection({ day }: { day: ParsedDay }) {
 }
 
 function ExerciseCard({ exercise }: { exercise: ParsedExercise }) {
+  // Check if we have structured data or just details string
+  const hasStructuredData = exercise.sets || exercise.reps || exercise.load || exercise.rpe || exercise.rest;
+
   return (
-    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-slate-800/40 border border-slate-700/30 hover:border-sky-500/30 transition-all group">
-      <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center overflow-hidden">
-        <Dumbbell className="h-5 w-5 text-sky-400/70" />
+    <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-800/40 border border-slate-700/30 hover:border-sky-500/30 transition-all group">
+      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center">
+        <Dumbbell className="h-4 w-4 text-sky-400/70" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-slate-100 truncate">{exercise.name}</p>
-        <p className="text-xs text-slate-400">
-          {exercise.details || "See full plan for instructions"}
-        </p>
+        <p className="text-sm font-semibold text-slate-100 mb-1.5">{exercise.name}</p>
+        
+        {hasStructuredData ? (
+          <div className="space-y-1">
+            {/* Primary workout metrics */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+              {exercise.sets && (
+                <span className="text-slate-300">
+                  <span className="font-medium text-sky-400">{exercise.sets}</span> sets
+                </span>
+              )}
+              {exercise.reps && (
+                <span className="text-slate-300">
+                  <span className="font-medium text-emerald-400">{exercise.reps}</span> reps
+                </span>
+              )}
+              {exercise.load && (
+                <span className="text-slate-300">
+                  <span className="font-medium text-slate-200">{exercise.load}</span>
+                </span>
+              )}
+            </div>
+            
+            {/* Secondary metrics */}
+            {(exercise.rpe || exercise.rest) && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                {exercise.rpe && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                    <span className="text-[10px] font-medium">RPE</span>
+                    <span className="font-semibold">{exercise.rpe}</span>
+                  </span>
+                )}
+                {exercise.rest && (
+                  <span className="text-slate-400">
+                    Rest: <span className="text-slate-300">{exercise.rest}</span>
+                  </span>
+                )}
+              </div>
+            )}
+            
+            {/* Description/notes */}
+            {exercise.description && (
+              <p className="text-xs text-slate-400 leading-relaxed pt-0.5">
+                {exercise.description}
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-400">
+            {exercise.details || "See full plan for instructions"}
+          </p>
+        )}
       </div>
-      <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-sky-400 transition-colors" />
+      <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-sky-400 transition-colors flex-shrink-0 mt-0.5" />
     </div>
   );
 }

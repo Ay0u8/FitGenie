@@ -50,16 +50,19 @@ Then provide a JSON array with this exact structure:
   }
 ]
 
+CRITICAL: The JSON MUST contain EXACTLY the same exercises as the markdown section above it - same exercise names, same sets, same reps, same rest periods. The JSON is just a structured version of the markdown workout plan, not a different plan. Every exercise in the markdown MUST appear in the JSON with matching details.
+
 Rules for structured data:
-- Include ALL exercises from the markdown plan
+- Include ALL exercises from the markdown plan - DO NOT add or remove any exercises
+- Exercise names MUST match exactly between markdown and JSON
 - "week" should be an integer (1, 2, 3, etc.)
 - "day" should match the heading from the markdown (e.g., "Day 1 - Upper Body", "Rest Day")
-- "sets" must be an integer (e.g., 3)
-- "reps" is a string (e.g., "8-10", "12-15", "AMRAP", "30-60s hold")
+- "sets" must be an integer matching the markdown (e.g., 3)
+- "reps" is a string matching the markdown (e.g., "8-10", "12-15", "AMRAP", "30-60s hold")
 - "load" is always an empty string "" (user will fill manually)
 - "rpe" is a string representing Rate of Perceived Exertion (e.g., "7", "7-8", "8-9"). For beginners use "6-7", intermediate "7-8", advanced "8-9". For warm-ups/mobility use "3-4". Leave empty "" if not applicable.
-- "rest" is a string (e.g., "2-3 min", "60-90s", "30s")
-- "description" should be detailed: what the movement is, key form cues, common mistakes to avoid, breathing pattern if relevant. 2-4 sentences.
+- "rest" is a string matching the markdown (e.g., "2-3 min", "60-90s", "30s")
+- "description" should be detailed: what the movement is, key form cues, common mistakes to avoid, breathing pattern if relevant. 2-4 sentences. This can be more detailed than the markdown notes.
 
 For rest days, create an entry with "day": "Rest Day" and empty exercises array: { "week": 1, "day": "Rest Day", "exercises": [] }
 
