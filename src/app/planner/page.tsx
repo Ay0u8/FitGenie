@@ -12,10 +12,12 @@ const levels = ["Beginner", "Intermediate", "Advanced"];
 
 type ParsedExercise = {
   name: string;
-  sets: string;
-  reps: string;
-  rest?: string;
-  note?: string;
+  details?: string;
+};
+
+type ParsedDay = {
+  title: string;
+  exercises: ParsedExercise[];
 };
 
 export default function PlannerPage() {
@@ -25,7 +27,7 @@ export default function PlannerPage() {
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [injuriesText, setInjuriesText] = useState("");
   const [copied, setCopied] = useState(false);
-  const [exercises, setExercises] = useState<ParsedExercise[]>([]);
+  const [parsedDays, setParsedDays] = useState<ParsedDay[]>([]);
   const [planMeta, setPlanMeta] = useState<{
     goal: string;
     daysPerWeek: number;
@@ -52,7 +54,7 @@ export default function PlannerPage() {
     setLoading(true);
     setError(null);
     setPlan(null);
-    setExercises([]);
+    setParsedDays([]);
     setPlanMeta(null);
 
     const goalValue = formData.get("goal");
@@ -107,7 +109,7 @@ export default function PlannerPage() {
       const data = await res.json();
       setPlan(data.plan);
       setPlanMeta({ goal, daysPerWeek, programLengthWeeks });
-      setExercises(parseExercisesFromPlan(data.plan));
+      setParsedDays(parsePlanByDay(data.plan));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong";
       setError(message);
@@ -343,22 +345,22 @@ export default function PlannerPage() {
                     </p>
                     <h3 className="text-xl font-bold text-white mb-4">{planTitle}</h3>
 
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium text-slate-300 mb-2">Exercises</p>
-                      <div className="max-h-[450px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                        {exercises.length > 0 ? (
-                          exercises.map((exercise, index) => (
-                            <ExerciseCard key={index} exercise={exercise} />
-                          ))
-                        ) : (
-                          <div className="text-xs text-slate-400 py-2 max-h-[400px] overflow-y-auto custom-scrollbar">
-                            <div
-                              dangerouslySetInnerHTML={{ __html: markdownToHtml(plan) }}
-                              className="prose prose-invert prose-xs max-w-none"
-                            />
-                          </div>
-                        )}
-                      </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-slate-300">Weekly breakdown</p>
+                      {parsedDays.length > 0 ? (
+                        <div className="max-h-[480px] overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+                          {parsedDays.map((day) => (
+                            <DaySection key={day.title} day={day} />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-slate-400 py-2 max-h-[400px] overflow-y-auto custom-scrollbar">
+                          <div
+                            dangerouslySetInnerHTML={{ __html: markdownToHtml(plan) }}
+                            className="prose prose-invert prose-xs max-w-none"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -408,36 +410,84 @@ function markdownToHtml(markdown: string): string {
   return html;
 }
 
-function parseExercisesFromPlan(plan: string): ParsedExercise[] {
-  const exercises: ParsedExercise[] = [];
+function parsePlanByDay(plan: string): ParsedDay[] {
   const lines = plan.split("\n");
+  const days: ParsedDay[] = [];
+  let current: ParsedDay | null = null;
 
-  for (const line of lines) {
-    const exerciseMatch = line.match(
-      /^[-*]\s*([^:]+):\s*(\d+)\s*(?:sets?\s*)?x\s*(\d+[--]?\d*)\s*(?:reps?)?,?\s*(?:rest\s*)?(\d+\s*(?:sec|min|s|m))?\.?\s*(.*)$/i
-    );
+  const commitDay = () => {
+    if (current && current.exercises.length > 0) {
+      days.push(current);
+    }
+  };
 
-    if (exerciseMatch) {
-      exercises.push({
-        name: exerciseMatch[1].trim(),
-        sets: exerciseMatch[2],
-        reps: exerciseMatch[3],
-        rest: exerciseMatch[4] || undefined,
-        note: exerciseMatch[5] || undefined,
-      });
-    } else {
-      const simpleMatch = line.match(/^[-*]\s*([^:]+):\s*(\d+)\s*[xX]\s*(\d+)/i);
-      if (simpleMatch) {
-        exercises.push({
-          name: simpleMatch[1].trim(),
-          sets: simpleMatch[2],
-          reps: simpleMatch[3],
-        });
-      }
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const headingMatch = line.match(/^(?:#+\s*)?(Day\s*\d+[^\r\n]*)$/i);
+    if (headingMatch) {
+      commitDay();
+      const headingText = headingMatch[1].trim().replace(/\s+/g, " ");
+      current = {
+        title: headingText.replace(/\s*[:\-–]\s*$/, ""),
+        exercises: [],
+      };
+      continue;
+    }
+
+    if (!current) continue;
+
+    const exercise = parseExerciseLine(line);
+    if (exercise) {
+      current.exercises.push(exercise);
     }
   }
 
-  return exercises;
+  commitDay();
+
+  return days;
+}
+
+function parseExerciseLine(line: string): ParsedExercise | null {
+  const bulletMatch = line.match(/^[-*]\s*(.+)$/);
+  if (!bulletMatch) {
+    return null;
+  }
+
+  const content = bulletMatch[1].trim();
+  if (!content) {
+    return null;
+  }
+
+  const [namePart, ...rest] = content.split(":");
+  const name = namePart.trim();
+  const details = rest.join(":").trim();
+
+  return {
+    name,
+    details: details || undefined,
+  };
+}
+
+function DaySection({ day }: { day: ParsedDay }) {
+  return (
+    <section className="rounded-lg border border-slate-700/40 bg-slate-900/50 p-3 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold text-slate-100">{day.title}</p>
+        <span className="text-[11px] text-slate-500">{day.exercises.length} exercise(s)</span>
+      </div>
+      {day.exercises.length > 0 ? (
+        <div className="space-y-2">
+          {day.exercises.map((exercise, index) => (
+            <ExerciseCard key={`${day.title}-${index}`} exercise={exercise} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-slate-400">No exercise details provided for this day.</p>
+      )}
+    </section>
+  );
 }
 
 function ExerciseCard({ exercise }: { exercise: ParsedExercise }) {
@@ -449,8 +499,7 @@ function ExerciseCard({ exercise }: { exercise: ParsedExercise }) {
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-slate-100 truncate">{exercise.name}</p>
         <p className="text-xs text-slate-400">
-          {exercise.sets} sets of {exercise.reps} reps
-          {exercise.rest && ` · ${exercise.rest}`}
+          {exercise.details || "See full plan for instructions"}
         </p>
       </div>
       <ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-sky-400 transition-colors" />
