@@ -22,8 +22,6 @@ AI-powered workout plan generator with Groq AI and Supabase authentication.
 ## Quick Start
 
 ```bash
-git clone https://github.com/Ay0u8/FitGenie.git
-cd FitGenie
 npm install
 ```
 
