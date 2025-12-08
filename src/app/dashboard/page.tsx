@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CopyButton } from "@/components/dashboard/copy-button";
+import { DeleteButton } from "@/components/dashboard/delete-button";
 import { supabaseServerClient } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
@@ -50,10 +51,13 @@ export default async function DashboardPage() {
                     Saved {new Date(workout.created_at).toLocaleDateString()}
                   </p>
                 </div>
-                <CopyButton content={workout.plan_markdown} />
+                <div className="flex items-center gap-2">
+                  <CopyButton content={workout.plan_markdown} />
+                  <DeleteButton workoutId={workout.id} />
+                </div>
               </div>
               <div className="mt-3 overflow-hidden rounded-lg border border-border/40 bg-card/70 p-4 text-sm">
-                <div className="prose prose-sm prose-invert max-w-none [&_.list-disc]:pl-5 [&_.list-disc]:space-y-1">
+                <div className="markdown-content space-y-4 text-foreground [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mt-6 [&_h2]:mb-2 [&_h3]:text-lg [&_h3]:font-medium [&_h3]:mt-4 [&_h3]:mb-2 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:space-y-1 [&_li]:text-foreground [&_strong]:font-semibold [&_em]:italic [&_blockquote]:border-l-4 [&_blockquote]:border-primary/50 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground [&_hr]:border-border [&_hr]:my-4">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {workout.plan_markdown}
                   </ReactMarkdown>

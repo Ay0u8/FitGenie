@@ -69,24 +69,27 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
-      <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-10">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+    <div className="min-h-screen bg-background text-foreground">
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-10">
+        <header>
+          <p className="text-xs uppercase tracking-[0.3em] text-primary/70">
+            Chat
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight">
             Chat with FitGenie
           </h1>
-          <p className="max-w-2xl text-sm text-slate-300">
+          <p className="text-sm text-muted-foreground">
             Ask free-form questions about training, warm-ups, exercise ideas
             and gym basics. Answers are for general information only and are
             not a substitute for medical advice.
           </p>
-          <div className="flex flex-wrap gap-2 pt-1">
+          <div className="flex flex-wrap gap-2 pt-3">
             {quickPrompts.map((prompt) => (
               <button
                 key={prompt}
                 type="button"
                 onClick={() => setInput(prompt)}
-                className="rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1 text-xs text-slate-200 transition hover:border-sky-500 hover:text-sky-200"
+                className="rounded-full border border-border bg-card/70 px-3 py-1 text-xs text-foreground transition hover:border-primary hover:text-primary"
               >
                 {prompt}
               </button>
@@ -94,12 +97,12 @@ export default function ChatPage() {
           </div>
         </header>
 
-        <Card className="flex min-h-[480px] flex-col bg-slate-900/60 border-slate-800">
+        <Card className="flex min-h-[480px] flex-col rounded-xl border border-border/70 bg-card/80 shadow">
           <CardHeader>
-            <CardTitle className="text-lg font-medium">Conversation</CardTitle>
+            <CardTitle className="text-lg font-semibold">Conversation</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col gap-4">
-            <div className="flex-1 space-y-3 overflow-y-auto rounded-md border border-slate-800 bg-slate-950/40 p-3 text-xs">
+            <div className="flex-1 space-y-3 overflow-y-auto rounded-lg border border-border/40 bg-card/70 p-3 text-xs">
               {messages.map((m, idx) => (
                 <div
                   key={idx}
@@ -110,8 +113,8 @@ export default function ChatPage() {
                   <div
                     className={`max-w-[80%] rounded-lg px-3 py-2 leading-relaxed shadow-sm whitespace-pre-wrap ${
                       m.role === "user"
-                        ? "bg-sky-500 text-slate-950"
-                        : "bg-slate-800/80 text-slate-50"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground"
                     }`}
                   >
                     {m.content}
@@ -120,7 +123,7 @@ export default function ChatPage() {
               ))}
               {loading && (
                 <div className="flex justify-start">
-                  <div className="rounded-lg bg-slate-800/80 px-3 py-2 text-xs text-slate-300">
+                  <div className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
                     Thinking...
                   </div>
                 </div>
@@ -132,22 +135,22 @@ export default function ChatPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="e.g. What's a good warm-up for leg day?"
-                className="h-9 border-slate-700 bg-slate-900 text-xs"
+                className="h-9 border-border bg-card text-xs"
               />
               <Button
                 type="submit"
                 disabled={loading || !input.trim()}
-                className="h-9 bg-sky-500 text-xs font-semibold text-slate-950 hover:bg-sky-400"
+                className="h-9 bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90"
               >
                 Send
               </Button>
             </form>
 
             {error && (
-              <p className="text-[11px] text-red-400">{error}</p>
+              <p className="text-[11px] text-destructive">{error}</p>
             )}
 
-            <p className="mt-1 text-[10px] text-slate-400">
+            <p className="mt-1 text-[10px] text-muted-foreground">
               FitGenie may make mistakes. This chat is for general fitness
               education only and is not medical advice.
             </p>

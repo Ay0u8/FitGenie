@@ -31,6 +31,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground antialiased`}
+        suppressHydrationWarning
       >
         <ThemeProvider
           attribute="class"
@@ -38,20 +39,20 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="border-b border-border bg-background/80 backdrop-blur">
+          <div className="sticky top-0 z-[100] border-b border-border bg-background/80 backdrop-blur">
             <nav className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3 text-sm">
               <Link href="/" className="font-semibold tracking-tight">
                 FitGenie
               </Link>
               <div className="flex items-center gap-4 text-xs">
+                <Link href="/dashboard" className="transition hover:text-primary">
+                  Dashboard
+                </Link>
                 <Link href="/planner" className="transition hover:text-primary">
                   Planner
                 </Link>
                 <Link href="/chat" className="transition hover:text-primary">
                   Chat
-                </Link>
-                <Link href="/dashboard" className="transition hover:text-primary">
-                  Dashboard
                 </Link>
                 <ThemeToggle />
                 <AuthButtons />

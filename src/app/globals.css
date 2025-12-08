@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -141,7 +142,8 @@
 
 /* Pulse animation for body highlights */
 @keyframes bodyPulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.4;
   }
   50% {
@@ -159,7 +161,9 @@
   line-height: 1.5;
 }
 
-.prose-xs h1, .prose-xs h2, .prose-xs h3 {
+.prose-xs h1,
+.prose-xs h2,
+.prose-xs h3 {
   margin-top: 1em;
   margin-bottom: 0.5em;
   font-weight: 600;

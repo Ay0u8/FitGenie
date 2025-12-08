@@ -68,7 +68,7 @@ export function AuthButtons() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative z-[60]">
       <button
         type="button"
         className="rounded-full border border-border px-3 py-1 text-xs transition hover:border-primary hover:text-primary"
@@ -77,7 +77,7 @@ export function AuthButtons() {
         Sign in
       </button>
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-64 rounded-xl border border-border bg-background/95 p-3 shadow-xl">
+        <div className="absolute right-0 top-full z-[200] mt-2 w-64 rounded-xl border border-border bg-card p-3 shadow-2xl backdrop-blur-sm">
           <p className="text-[11px] text-muted-foreground mb-2">
             Enter your email to get a magic sign-in link.
           </p>
