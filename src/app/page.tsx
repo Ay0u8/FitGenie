@@ -63,32 +63,35 @@ export default function Home() {
         <section className="space-y-6 rounded-2xl border border-border bg-card p-6 shadow-lg">
           <div className="flex flex-col gap-2">
             <h2 className="text-xl font-semibold tracking-tight text-foreground">
-              Trusted by over 10,000 lifters
+              Daily Motivation
             </h2>
             <p className="text-sm text-muted-foreground">
-              FitGenie ensures plain, non-extreme fitness advice with safety-first guidance.
+              Stay inspired on your fitness journey with these powerful reminders.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-4 text-muted-foreground sm:grid-cols-3 md:grid-cols-4">
-            {["FITNESS", "AUTHORITY", "NORTHSTAR", "LUMENLIFTS", "NEXTGRADE", "PRODISINE"].map((name) => (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+            {[
+              { quote: "The only bad workout is the one that didn't happen.", icon: "💪" },
+              { quote: "Your body can stand almost anything. It's your mind you have to convince.", icon: "🧠" },
+              { quote: "Discipline is choosing between what you want now and what you want most.", icon: "🎯" },
+              { quote: "Small progress is still progress. Keep showing up.", icon: "📈" },
+              { quote: "The pain you feel today will be the strength you feel tomorrow.", icon: "🔥" },
+              { quote: "Fitness is not about being better than someone else. It's about being better than you used to be.", icon: "⭐" },
+            ].map((item, index) => (
               <div
-                key={name}
-                className="flex items-center justify-center rounded-md border border-border bg-background/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+                key={index}
+                className="flex items-start gap-3 rounded-xl border border-border bg-background/60 p-4"
               >
-                {name}
+                <span className="text-2xl">{item.icon}</span>
+                <p className="text-xs text-muted-foreground italic leading-relaxed">&ldquo;{item.quote}&rdquo;</p>
               </div>
             ))}
           </div>
 
-          <div className="rounded-xl border border-border bg-background/70 p-4 text-sm text-foreground">
-            <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">Live activity</p>
-            <div className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground sm:flex-row sm:items-center sm:gap-4">
-              <span>Someone in NY generated a Push Day plan.</span>
-              <span>•</span>
-              <span>Someone in SF generated a Leg Day plan.</span>
-              <span>•</span>
-              <span>Someone in TX asked for a warm-up routine.</span>
-            </div>
+          <div className="rounded-xl border border-border bg-gradient-to-r from-primary/10 via-transparent to-primary/10 p-4 text-center">
+            <p className="text-sm font-medium text-foreground">
+              🏋️ Remember: Every rep counts. Every step matters. Start where you are.
+            </p>
           </div>
         </section>
 
