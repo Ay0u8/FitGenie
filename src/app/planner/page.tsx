@@ -429,22 +429,22 @@ function BodyMap({
   const frontHotspots = [
     { key: "Head", cx: 103, cy: 8, r: 4 },
     { key: "Neck", cx: 103, cy: 25, r: 3 },
-    { key: "Left shoulder", cx: 83, cy: 35, r: 3.5 },
-    { key: "Right shoulder", cx: 123, cy: 35, r: 3.5 },
+    { key: "Left shoulder", cx: 83, cy: 37, r: 3.5 },
+    { key: "Right shoulder", cx: 123, cy: 37, r: 3.5 },
     { key: "Chest", cx: 103, cy: 48, r: 5 },
-    { key: "Left bicep", cx: 78, cy: 55, r: 3 },
-    { key: "Right bicep", cx: 128, cy: 55, r: 3 },
-    { key: "Abs", cx: 103, cy: 70, r: 4.5 },
-    { key: "Left forearm", cx: 72, cy: 78, r: 3 },
-    { key: "Right forearm", cx: 134, cy: 78, r: 3 },
-    { key: "Left hip", cx: 97, cy: 90, r: 3 },
-    { key: "Right hip", cx: 109, cy: 90, r: 3 },
-    { key: "Left quad", cx: 96, cy: 130, r: 4 },
-    { key: "Right quad", cx: 110, cy: 130, r: 4 },
-    { key: "Left knee", cx: 95, cy: 152, r: 3 },
-    { key: "Right knee", cx: 111, cy: 152, r: 3 },
-    { key: "Left shin", cx: 94, cy: 172, r: 3 },
-    { key: "Right shin", cx: 112, cy: 172, r: 3 },
+    { key: "Left bicep", cx: 82, cy: 55, r: 3 },
+    { key: "Right bicep", cx: 124, cy: 55, r: 3 },
+    { key: "Abs", cx: 103, cy: 75, r: 4.5 },
+    { key: "Left forearm", cx: 75, cy: 80, r: 3 },
+    { key: "Right forearm", cx: 131, cy: 80, r: 3 },
+    { key: "Left hip", cx: 95, cy: 95, r: 3 },
+    { key: "Right hip", cx: 111, cy: 95, r: 3 },
+    { key: "Left quad", cx: 92, cy: 130, r: 4 },
+    { key: "Right quad", cx: 114, cy: 130, r: 4 },
+    { key: "Left knee", cx: 93, cy: 152, r: 3 },
+    { key: "Right knee", cx: 113, cy: 152, r: 3 },
+    { key: "Left shin", cx: 92, cy: 172, r: 3 },
+    { key: "Right shin", cx: 114, cy: 172, r: 3 },
     { key: "Left ankle", cx: 94, cy: 190, r: 2.5 },
     { key: "Right ankle", cx: 112, cy: 190, r: 2.5 },
   ];
@@ -456,17 +456,17 @@ function BodyMap({
     { key: "Left trap", cx: 93, cy: 32, r: 3 },
     { key: "Right trap", cx: 113, cy: 32, r: 3 },
     { key: "Upper back", cx: 103, cy: 45, r: 5 },
-    { key: "Left rear delt", cx: 83, cy: 38, r: 3 },
-    { key: "Right rear delt", cx: 123, cy: 38, r: 3 },
-    { key: "Left tricep", cx: 78, cy: 55, r: 3 },
-    { key: "Right tricep", cx: 128, cy: 55, r: 3 },
+    { key: "Left rear delt", cx: 83, cy: 40, r: 3 },
+    { key: "Right rear delt", cx: 123, cy: 40, r: 3 },
+    { key: "Left tricep", cx: 82, cy: 55, r: 3 },
+    { key: "Right tricep", cx: 124, cy: 55, r: 3 },
     { key: "Mid back", cx: 103, cy: 60, r: 4 },
-    { key: "Lower back", cx: 103, cy: 78, r: 4.5 },
-    { key: "Glutes", cx: 103, cy: 100, r: 5 },
-    { key: "Left hamstring", cx: 96, cy: 130, r: 4 },
-    { key: "Right hamstring", cx: 110, cy: 130, r: 4 },
-    { key: "Left calf", cx: 94, cy: 172, r: 3.5 },
-    { key: "Right calf", cx: 112, cy: 172, r: 3.5 },
+    { key: "Lower back", cx: 103, cy: 82, r: 4.5 },
+    { key: "Glutes", cx: 103, cy: 105, r: 5 },
+    { key: "Left hamstring", cx: 92, cy: 130, r: 4 },
+    { key: "Right hamstring", cx: 114, cy: 130, r: 4 },
+    { key: "Left calf", cx: 92, cy: 172, r: 3.5 },
+    { key: "Right calf", cx: 114, cy: 172, r: 3.5 },
     { key: "Left Achilles", cx: 94, cy: 190, r: 2.5 },
     { key: "Right Achilles", cx: 112, cy: 190, r: 2.5 },
   ];
@@ -487,17 +487,16 @@ function BodyMap({
         e.stopPropagation();
         onToggle(spot.key);
       }}>
-        {/* Outer glow ring when selected */}
+        {/* Static halo ring when selected (no animation) */}
         {active && (
           <circle
             cx={spot.cx}
             cy={spot.cy}
-            r={spot.r + 3}
+            r={spot.r + 3.5}
             fill="none"
             stroke="#22d3ee"
-            strokeWidth="1"
-            opacity="0.4"
-            className="animate-ping"
+            strokeWidth="1.2"
+            opacity="0.45"
           />
         )}
         {/* Main dot */}
