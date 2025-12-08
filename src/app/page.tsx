@@ -47,16 +47,69 @@ export default function Home() {
                 <li>Plank – 3 sets of 20–30s hold</li>
               </ul>
             </div>
-            <div className="space-y-1 rounded-md bg-slate-950/70 p-3">
-              <p className="text-[11px] font-semibold text-slate-200">
-                Safety first
-              </p>
-              <p className="text-[11px] text-slate-400">
+          <div className="space-y-1 rounded-md bg-slate-950/70 p-3">
+            <p className="text-[11px] font-semibold text-slate-200">
+              Safety first
+            </p>
+            <p className="text-[11px] text-slate-400">
                 Begin with 5–10 minutes of light cardio and easy mobility. Stop
                 any exercise that causes sharp pain, and ask a professional if
                 you&apos;re unsure what&apos;s safe for you.
               </p>
             </div>
+          </div>
+        </section>
+
+        <section className="space-y-6 rounded-2xl border border-slate-800/60 bg-slate-900/60 p-6 shadow-lg">
+          <div className="flex flex-col gap-2">
+            <h2 className="text-xl font-semibold tracking-tight text-slate-100">
+              Trusted by over 10,000 lifters
+            </h2>
+            <p className="text-sm text-slate-400">
+              FitGenie ensures plain, non-extreme fitness advice with safety-first guidance.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-4 text-slate-300 sm:grid-cols-3 md:grid-cols-4">
+            {["FITNESS", "AUTHORITY", "NORTHSTAR", "LUMENLIFTS", "NEXTGRADE", "PRODISINE"].map((name) => (
+              <div
+                key={name}
+                className="flex items-center justify-center rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400"
+              >
+                {name}
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200">
+            <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">Live activity</p>
+            <div className="mt-2 flex flex-col gap-1 text-xs text-slate-300 sm:flex-row sm:items-center sm:gap-4">
+              <span>Someone in NY generated a Push Day plan.</span>
+              <span>•</span>
+              <span>Someone in SF generated a Leg Day plan.</span>
+              <span>•</span>
+              <span>Someone in TX asked for a warm-up routine.</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-6">
+          <h2 className="text-xl font-semibold tracking-tight text-slate-100">
+            How it works
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              { title: "Profile", text: "Share your goal, experience, schedule, equipment, and injuries." },
+              { title: "AI Magic", text: "Groq-powered FitGenie builds a safe, structured plan with clear bullets." },
+              { title: "Get Plan", text: "Download, copy, or save your plan. Use it at the gym immediately." },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-sm"
+              >
+                <p className="text-sm font-semibold text-slate-100">{item.title}</p>
+                <p className="text-xs text-slate-400 mt-2">{item.text}</p>
+              </div>
+            ))}
           </div>
         </section>
       </main>
