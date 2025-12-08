@@ -5,7 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Clipboard, X, Dumbbell, Check, ChevronRight, Maximize2 } from "lucide-react";
+import {
+  Clipboard,
+  X,
+  Dumbbell,
+  Check,
+  ChevronRight,
+  Maximize2,
+  Download,
+  Printer,
+} from "lucide-react";
 
 const goals = ["Build muscle", "Lose fat", "General fitness", "Strength", "Endurance"];
 const levels = ["Beginner", "Intermediate", "Advanced"];
@@ -123,6 +132,54 @@ export default function PlannerPage() {
     navigator.clipboard.writeText(plan).catch(() => null);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownloadMarkdown = () => {
+    if (!plan) return;
+    const fileName =
+      planTitle.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() ||
+      "fitgenie-plan";
+    const blob = new Blob([plan], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${fileName}.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handlePrintPlan = () => {
+    if (!plan) return;
+    const printWindow = window.open("", "_blank", "width=900,height=700");
+    if (!printWindow) return;
+    const htmlContent = markdownToHtml(plan);
+    printWindow.document.write(`<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>${planTitle}</title>
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 24px; color: #0f172a; }
+      h1 { margin-bottom: 12px; }
+      h2, h3 { margin-top: 24px; margin-bottom: 8px; }
+      ul { margin-left: 18px; }
+      blockquote { border-left: 3px solid #94a3b8; padding-left: 12px; color: #475569; }
+    </style>
+  </head>
+  <body>
+    <h1>${planTitle}</h1>
+    <div>${htmlContent}</div>
+    <script>
+      window.onload = function() {
+        window.focus();
+        window.print();
+      };
+    </script>
+  </body>
+</html>`);
+    printWindow.document.close();
   };
 
   return (
@@ -371,7 +428,7 @@ export default function PlannerPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleCopy}
-                      className="flex-1 min-w-[120px] h-9 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 text-xs"
+                      className="flex-1 min-w-[140px] h-9 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 text-xs"
                     >
                       {copied ? (
                         <Check className="h-3.5 w-3.5 mr-1.5" />
@@ -379,6 +436,24 @@ export default function PlannerPage() {
                         <Clipboard className="h-3.5 w-3.5 mr-1.5" />
                       )}
                       {copied ? "Copied!" : "Copy Plan"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadMarkdown}
+                      className="flex-1 min-w-[140px] h-9 border-slate-600/60 text-slate-200 hover:text-white text-xs"
+                    >
+                      <Download className="h-3.5 w-3.5 mr-1.5" />
+                      Download .md
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handlePrintPlan}
+                      className="flex-1 min-w-[140px] h-9 border-slate-600/60 text-slate-200 hover:text-white text-xs"
+                    >
+                      <Printer className="h-3.5 w-3.5 mr-1.5" />
+                      Print / PDF
                     </Button>
                   </div>
                 </div>
