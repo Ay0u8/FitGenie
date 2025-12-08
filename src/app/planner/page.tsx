@@ -260,18 +260,6 @@ export default function PlannerPage() {
                     onClearAll={() => setSelectedAreas([])}
                     onSelectAll={(areas) => setSelectedAreas(areas)}
                   />
-                  {selectedAreas.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-sky-200">
-                      {selectedAreas.map((area) => (
-                        <span
-                          key={area}
-                          className="rounded-full border border-sky-500/50 bg-sky-500/10 px-2 py-1"
-                        >
-                          {area}
-                        </span>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 <label className="flex flex-col gap-1">
