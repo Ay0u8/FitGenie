@@ -2,13 +2,18 @@
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-muted to-background text-foreground">
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 py-16">
+    <div className="min-h-screen bg-background text-foreground">
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-10">
         <section className="grid gap-8 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] md:items-center">
           <div className="space-y-5">
-            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-              Plan smarter workouts with FitGenie.
-            </h1>
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-primary/70">
+                Welcome
+              </p>
+              <h1 className="text-3xl font-semibold tracking-tight">
+                Plan smarter workouts with FitGenie.
+              </h1>
+            </div>
             <p className="max-w-xl text-sm text-muted-foreground">
               FitGenie helps gym beginners and regular lifters design safe,
               simple workout routines and get clear answers to common training
@@ -34,12 +39,12 @@ export default function Home() {
               or qualified professional before starting a new exercise program.
             </p>
           </div>
-          <div className="space-y-4 rounded-2xl border border-border bg-card p-4 text-xs shadow-lg">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          <div className="rounded-xl border border-border/70 bg-card/80 p-4 text-xs shadow">
+            <p className="text-[11px] uppercase tracking-[0.3em] text-primary/70">
               Example plan snippet
             </p>
-            <div className="space-y-2">
-              <p className="font-medium text-foreground">Day 1 – Full body</p>
+            <div className="mt-3 space-y-2">
+              <p className="font-semibold text-foreground">Day 1 – Full body</p>
               <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
                 <li>Goblet squat – 3 sets of 8–12 reps, 90s rest</li>
                 <li>Dumbbell bench press – 3 sets of 8–12 reps, 90s rest</li>
@@ -47,7 +52,7 @@ export default function Home() {
                 <li>Plank – 3 sets of 20–30s hold</li>
               </ul>
             </div>
-          <div className="space-y-1 rounded-md bg-background/70 p-3">
+          <div className="mt-3 space-y-1 rounded-lg border border-border/40 bg-card/70 p-3">
             <p className="text-[11px] font-semibold text-foreground">
               Safety first
             </p>

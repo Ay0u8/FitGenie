@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useMemo, useRef, useState } from "react";
+import { useSupabaseSession } from "@/hooks/use-supabase-session";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -58,6 +59,11 @@ export default function PlannerPage() {
   const [exerciseModalError, setExerciseModalError] = useState<string | null>(null);
   const [exerciseModalLoading, setExerciseModalLoading] = useState(false);
   const exerciseMediaCache = useRef<Record<string, ExerciseMedia | null>>({});
+  const { session } = useSupabaseSession();
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const combinedInjuries = useMemo(() => {
     if (!selectedAreas.length) return injuriesText;
@@ -118,12 +124,68 @@ export default function PlannerPage() {
     setExerciseModalLoading(false);
   };
 
+  /**
+   * Strip the STRUCTURED_DATA JSON section from the plan
+   * Returns only the markdown content
+   */
+  const stripStructuredData = (planText: string): string => {
+    // Find and remove everything from ## STRUCTURED_DATA onwards
+    const match = planText.match(/([\s\S]*?)(?:\n\s*##\s*STRUCTURED_DATA[\s\S]*)?$/i);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+    return planText;
+  };
+
+  const handleSavePlan = async () => {
+    if (!plan || !planMeta || saveStatus === "saving") return;
+    if (!session) {
+      setSaveError("Sign in to save your workout plans.");
+      return;
+    }
+    setSaveStatus("saving");
+    setSaveError(null);
+
+    try {
+      // Strip the JSON structured data before saving
+      const markdownOnly = stripStructuredData(plan);
+
+      const res = await fetch("/api/workouts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: planTitle,
+          planMarkdown: markdownOnly,
+          planMeta: {
+            ...planMeta,
+            days: parsedDays,
+          },
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to save plan");
+      }
+
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2500);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to save plan";
+      setSaveError(message);
+      setSaveStatus("error");
+    }
+  };
+
   async function handleSubmit(formData: FormData) {
     setLoading(true);
     setError(null);
     setPlan(null);
     setParsedDays([]);
     setPlanMeta(null);
+    setSaveStatus("idle");
+    setSaveError(null);
     setActiveExercise(null);
     setExerciseMedia(null);
     setExerciseModalError(null);
@@ -198,19 +260,6 @@ export default function PlannerPage() {
     }
   }
 
-  /**
-   * Strip the STRUCTURED_DATA JSON section from the plan
-   * Returns only the markdown content
-   */
-  const stripStructuredData = (planText: string): string => {
-    // Find and remove everything from ## STRUCTURED_DATA onwards
-    const match = planText.match(/([\s\S]*?)(?:\n\s*##\s*STRUCTURED_DATA[\s\S]*)?$/i);
-    if (match && match[1]) {
-      return match[1].trim();
-    }
-    return planText;
-  };
-
   const handleCopy = () => {
     if (!plan) return;
     const markdownOnly = stripStructuredData(plan);
@@ -281,25 +330,22 @@ export default function PlannerPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      <div className="pointer-events-none absolute inset-0 dark:opacity-100 opacity-30 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.1),transparent_30%),radial-gradient(circle_at_80%_0%,rgba(129,140,248,0.12),transparent_25%),radial-gradient(circle_at_50%_80%,rgba(16,185,129,0.08),transparent_28%)]" />
-      <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10">
-        <header className="space-y-3">
-          <p className="text-xs uppercase tracking-[0.28em] text-primary">Planner</p>
-          <div className="flex flex-col gap-2">
-            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-              FitGenie Workout Planner
-            </h1>
-            <p className="max-w-3xl text-sm text-muted-foreground">
-              Tell FitGenie about your goals, schedule, equipment, and any injuries. We&apos;ll build a clear, bullet-point plan you can follow today.
-            </p>
-          </div>
+    <div className="min-h-screen bg-background text-foreground">
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-10">
+        <header className="space-y-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-primary/70">Planner</p>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            FitGenie Workout Planner
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Tell FitGenie about your goals, schedule, equipment, and any injuries. We&apos;ll build a clear, bullet-point plan you can follow today.
+          </p>
         </header>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-          <Card className="bg-card border-border shadow-xl shadow-md">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+          <Card className="rounded-xl border border-border/70 bg-card/80 shadow">
             <CardHeader>
-              <CardTitle className="text-lg font-medium tracking-tight text-foreground">
+              <CardTitle className="text-lg font-semibold">
                 Your training profile
               </CardTitle>
             </CardHeader>
@@ -317,11 +363,11 @@ export default function PlannerPage() {
                     <span className="text-xs font-medium text-foreground">Goal</span>
                     <select
                       name="goal"
-                      className="h-10 rounded-md border border-input bg-card px-3 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="h-10 rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       defaultValue={goals[0]}
                     >
                       {goals.map((g) => (
-                        <option key={g} value={g}>
+                        <option key={g} value={g} className="bg-background text-foreground">
                           {g}
                         </option>
                       ))}
@@ -331,11 +377,11 @@ export default function PlannerPage() {
                     <span className="text-xs font-medium text-foreground">Experience level</span>
                     <select
                       name="experienceLevel"
-                      className="h-10 rounded-md border border-input bg-card px-3 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="h-10 rounded-md border border-input bg-background px-3 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       defaultValue={levels[0]}
                     >
                       {levels.map((l) => (
-                        <option key={l} value={l}>
+                        <option key={l} value={l} className="bg-background text-foreground">
                           {l}
                         </option>
                       ))}
@@ -510,6 +556,25 @@ export default function PlannerPage() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
+                    {session ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSavePlan}
+                        className="flex-1 min-w-[140px] h-9 border-slate-600/60 text-slate-200 hover:text-white text-xs"
+                        disabled={saveStatus === "saving"}
+                      >
+                        {saveStatus === "saving"
+                          ? "Saving..."
+                          : saveStatus === "saved"
+                            ? "Saved!"
+                            : "Save to FitGenie"}
+                      </Button>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground">
+                        Sign in to save this plan for later.
+                      </p>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
@@ -551,6 +616,9 @@ export default function PlannerPage() {
                       Download Excel
                     </Button>
                   </div>
+                  {saveError && (
+                    <p className="text-[11px] text-red-400">{saveError}</p>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -608,7 +676,7 @@ function parseJsonToParsedDays(planText: string): ParsedDay[] {
     const firstWeekDays = jsonData.filter((dayData: DayData) => dayData.week === 1);
 
     firstWeekDays.forEach((dayData: DayData) => {
-      const dayTitle = `Day ${dayData.day}`;
+      const dayTitle = `${dayData.day}`;
 
       const exercises: ParsedExercise[] = dayData.exercises.map((ex: ExerciseData) => {
         return {

@@ -4,6 +4,7 @@ import "./globals.css";
 import Link from "next/link";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AuthButtons } from "@/components/auth/auth-buttons";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,22 +39,23 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="border-b border-border bg-background/80 backdrop-blur">
+          <div className="sticky top-0 z-[100] border-b border-border bg-background/80 backdrop-blur">
             <nav className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3 text-sm">
               <Link href="/" className="font-semibold tracking-tight">
                 FitGenie
               </Link>
               <div className="flex items-center gap-4 text-xs">
-                <Link
-                  href="/planner"
-                  className="transition hover:text-primary"
-                >
+                <Link href="/dashboard" className="transition hover:text-primary">
+                  Dashboard
+                </Link>
+                <Link href="/planner" className="transition hover:text-primary">
                   Planner
                 </Link>
                 <Link href="/chat" className="transition hover:text-primary">
                   Chat
                 </Link>
                 <ThemeToggle />
+                <AuthButtons />
               </div>
             </nav>
           </div>
