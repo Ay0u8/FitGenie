@@ -140,6 +140,7 @@ This project is for educational purposes (Generative AI course - S5).
 ## 👨‍💻 Author
 
 **Ayoub** - [GitHub](https://github.com/Ay0u8)
+
 **Filip** - [GitHub](https://github.com/FilZek04)
 
 ---
